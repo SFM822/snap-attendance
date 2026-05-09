@@ -1,0 +1,1633 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام الحضور - SNAP FILTER PHONES</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05080f;--s1:#0a0f1c;--s2:#0f1628;--card:#131c30;--border:#1a2840;
+  --accent:#4f8ef7;--ag:#2563eb;--green:#10b981;--red:#f43f5e;
+  --orange:#f59e0b;--yellow:#eab308;--text:#e2eaff;--muted:#4a5a7a;
+  --r:14px;--gold:#c9a227;
+}
+/* LIGHT THEME FOR MANAGER DASHBOARD */
+#mgr-dash{
+  --bg:#f0f4f8;--s1:#ffffff;--s2:#f8fafc;--card:#ffffff;--border:#e2e8f0;
+  --text:#1e293b;--muted:#64748b;--accent:#2563eb;--ag:#1d4ed8;
+  background:#f0f4f8;color:#1e293b;
+}
+#mgr-dash .mgr-header{background:#fff;border-bottom:1px solid #e2e8f0;box-shadow:0 1px 8px rgba(0,0,0,.08)}
+#mgr-dash .mgr-nav{background:#fff;border-bottom:1px solid #e2e8f0}
+#mgr-dash .mnav{color:#64748b}
+#mgr-dash .mnav.active{color:#2563eb;border-bottom-color:#2563eb}
+#mgr-dash main{background:#f0f4f8}
+#mgr-dash .card{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+#mgr-dash .st{background:#fff;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+#mgr-dash th{color:#64748b;border-bottom:1px solid #e2e8f0}
+#mgr-dash td{border-bottom:1px solid #f1f5f9;color:#1e293b}
+#mgr-dash tr:hover td{background:#f8fafc}
+#mgr-dash .finp,#mgr-dash .fsel{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b}
+#mgr-dash .flbl{color:#64748b}
+#mgr-dash .ch{color:#1e293b}
+#mgr-dash .mh-title{color:#1e293b}
+#mgr-dash .mh-sub{color:#64748b}
+#mgr-dash .mh-clock{color:#2563eb}
+#mgr-dash .mh-date{color:#64748b}
+#mgr-dash .empty{color:#94a3b8}
+#mgr-dash .modal{background:#fff;border:1px solid #e2e8f0}
+#mgr-dash .btn-cancel{background:#f8fafc;border:1px solid #e2e8f0;color:#1e293b}
+#mgr-dash .shift-tag{background:rgba(37,99,235,.1);color:#2563eb}
+#mgr-dash p{color:#64748b}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;direction:rtl;overflow-x:hidden}
+
+/* KIOSK */
+#kiosk{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;
+  background:radial-gradient(ellipse 70% 40% at 50% 0%,#1a3a6a18,transparent)}
+.kiosk-top{text-align:center;margin-bottom:18px}
+.shop-logo-img{width:108px;height:108px;border-radius:50%;object-fit:cover;
+  border:3px solid var(--gold);box-shadow:0 0 28px #c9a22750,0 0 60px #c9a22720;
+  margin-bottom:10px;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.kiosk-title{font-size:21px;font-weight:900;color:var(--gold)}
+.kiosk-sub{font-size:13px;color:var(--muted);margin-top:3px}
+.kiosk-clock{font-size:46px;font-weight:900;color:var(--accent);letter-spacing:3px;
+  text-shadow:0 0 30px #4f8ef730;margin-bottom:4px;font-variant-numeric:tabular-nums}
+.kiosk-date{font-size:13px;color:var(--muted);margin-bottom:22px;text-align:center;line-height:1.8}
+.pin-box{background:var(--card);border:1px solid var(--border);border-radius:22px;
+  padding:24px;width:100%;max-width:330px;box-shadow:0 40px 80px #00000060}
+.pin-display{display:flex;justify-content:center;gap:12px;margin-bottom:22px}
+.pin-dot{width:15px;height:15px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .2s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px #4f8ef760}
+.pin-dot.error{background:var(--red);border-color:var(--red)}
+.pin-label{text-align:center;font-size:13px;color:var(--muted);margin-bottom:16px;font-weight:600}
+.numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.np-btn{aspect-ratio:1;border:1px solid var(--border);border-radius:12px;background:var(--s2);
+  color:var(--text);font-family:'Cairo',sans-serif;font-size:21px;font-weight:700;
+  cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;user-select:none}
+.np-btn:hover{background:var(--border);border-color:var(--accent)}
+.np-btn:active{transform:scale(.92);background:var(--accent);color:#fff}
+.np-del{font-size:17px;color:var(--muted)}
+.np-enter{grid-column:span 2;aspect-ratio:auto;padding:12px;
+  background:linear-gradient(135deg,var(--accent),var(--ag));color:#fff;font-size:14px;border-color:transparent}
+.mgr-link{margin-top:16px;text-align:center;font-size:13px;color:var(--muted);cursor:pointer;transition:color .2s}
+.mgr-link:hover{color:var(--gold)}
+.lock-warning{margin-top:10px;text-align:center;font-size:12px;color:var(--red);min-height:18px}
+
+/* COOLDOWN OVERLAY */
+#cooldown-overlay{display:none;position:fixed;inset:0;background:rgba(5,8,15,.95);
+  z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#cooldown-overlay .ico{font-size:60px}
+#cooldown-overlay h2{font-size:22px;font-weight:900;color:var(--red)}
+#cooldown-overlay p{font-size:14px;color:var(--muted)}
+#cooldown-timer{font-size:48px;font-weight:900;color:var(--red);font-variant-numeric:tabular-nums}
+
+/* ACTION SCREEN */
+#action-screen{display:none;min-height:100vh;background:radial-gradient(ellipse 80% 50% at 50% 0%,#1a3a6a15,transparent)}
+.act-header{padding:11px 16px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--border);background:var(--s1)}
+.act-logo-row{display:flex;align-items:center;gap:10px}
+.act-logo-row img{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
+.act-emp-name{font-size:17px;font-weight:900}
+.act-emp-role{font-size:11px;color:var(--muted);margin-top:1px}
+.act-shift-badge{font-size:11px;color:var(--accent);margin-top:2px}
+.btn-back-kiosk{background:rgba(79,142,247,.1);border:1px solid rgba(79,142,247,.2);
+  color:var(--accent);border-radius:9px;padding:7px 13px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.act-body{padding:16px;max-width:480px;margin:0 auto}
+.act-clock-wrap{text-align:center;background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:16px;margin-bottom:16px}
+.act-clock{font-size:38px;font-weight:900;color:var(--accent);letter-spacing:2px}
+.act-date{font-size:12px;color:var(--muted);margin-top:4px;text-align:center;line-height:1.8}
+.status-pill{display:flex;align-items:center;gap:10px;background:var(--card);
+  border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:16px}
+.sdot{width:11px;height:11px;border-radius:50%;flex-shrink:0}
+.sdot.g{background:var(--green);box-shadow:0 0 10px var(--green)}
+.sdot.o{background:var(--orange);box-shadow:0 0 10px var(--orange)}
+.sdot.r{background:var(--red)}
+.sdot.grey{background:var(--muted)}
+.s-txt{font-size:14px;font-weight:700}
+.s-time{font-size:11px;color:var(--muted);margin-top:2px}
+.act-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.act-btn{padding:17px 8px;border:1px solid var(--border);border-radius:var(--r);
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:14px;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--card);color:var(--text)}
+.act-btn .ico{font-size:28px}
+.act-btn:not(:disabled):hover{transform:translateY(-2px);border-color:var(--accent)}
+.act-btn:not(:disabled):active{transform:scale(.97)}
+.act-btn:disabled{opacity:.3;cursor:not-allowed}
+.a-in{border-color:#10b98140;background:linear-gradient(135deg,#10b98112,#05080f)}
+.a-out{border-color:#f43f5e40;background:linear-gradient(135deg,#f43f5e12,#05080f)}
+.a-brk{border-color:#f59e0b40;background:linear-gradient(135deg,#f59e0b12,#05080f)}
+.a-bck{border-color:#4f8ef740;background:linear-gradient(135deg,#4f8ef712,#05080f)}
+.a-tmp{border-color:#a855f740;background:linear-gradient(135deg,#a855f712,#05080f)}
+.a-tmb{border-color:#06b6d440;background:linear-gradient(135deg,#06b6d412,#05080f)}
+.act-hist{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px}
+.hist-title{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.hi{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border)}
+.hi:last-child{border-bottom:none}
+.hi-ico{width:26px;text-align:center;font-size:15px}
+.hi-lbl{flex:1;font-size:12px;font-weight:600}
+.hi-t{font-size:13px;color:var(--accent);font-weight:900}
+
+/* MGR LOGIN */
+#mgr-login{display:none;position:fixed;inset:0;background:rgba(0,0,0,.87);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;z-index:300;padding:20px}
+.mgr-login-box{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:26px;width:100%;max-width:310px;text-align:center}
+.mgr-login-logo{width:64px;height:64px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);margin-bottom:10px}
+.mgr-login-box h2{font-size:18px;font-weight:900;margin-bottom:3px}
+.mgr-login-box p{font-size:12px;color:var(--muted);margin-bottom:18px}
+.mgr-pin-display{display:flex;justify-content:center;gap:8px;margin-bottom:16px}
+.mgr-pin-dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .2s}
+.mgr-pin-dot.filled{background:var(--gold);border-color:var(--gold)}
+.mgr-pin-dot.error{background:var(--red);border-color:var(--red)}
+.mgr-numpad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:210px;margin:0 auto}
+.mnp{aspect-ratio:1;border:1px solid var(--border);border-radius:10px;background:var(--s2);
+  color:var(--text);font-family:'Cairo',sans-serif;font-size:18px;font-weight:700;cursor:pointer;
+  transition:all .15s;display:flex;align-items:center;justify-content:center}
+.mnp:hover{background:var(--border)}
+.mnp:active{transform:scale(.92);background:var(--gold);color:#000}
+.mnp-del{font-size:15px;color:var(--muted)}
+.mnp-enter{grid-column:span 2;aspect-ratio:auto;padding:10px;
+  background:linear-gradient(135deg,var(--gold),#a07820);color:#000;border:none;font-size:13px;font-weight:800}
+.btn-mgr-cancel{margin-top:13px;background:none;border:none;color:var(--muted);
+  font-family:'Cairo',sans-serif;font-size:12px;cursor:pointer}
+.mgr-lock-warn{font-size:11px;color:var(--red);margin-top:8px;min-height:16px}
+
+/* MANAGER DASHBOARD */
+#mgr-dash{display:none}
+.mgr-header{background:var(--s1);border-bottom:1px solid var(--border);
+  padding:9px 13px;display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100}
+.mh-left{display:flex;align-items:center;gap:8px}
+.mh-logo-img{width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)}
+.mh-title{font-size:14px;font-weight:900}
+.mh-sub{font-size:10px;color:var(--muted)}
+.mh-clock{font-size:17px;font-weight:900;color:var(--accent);text-align:center;letter-spacing:1px}
+.mh-date{font-size:10px;color:var(--muted);text-align:center}
+.btn-mgr-exit{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--red);
+  border-radius:8px;padding:6px 10px;font-family:'Cairo',sans-serif;font-size:12px;font-weight:700;cursor:pointer}
+.mgr-nav{background:var(--s1);border-bottom:1px solid var(--border);display:flex;overflow-x:auto;padding:0 6px}
+.mnav{padding:10px 12px;font-family:'Cairo',sans-serif;font-size:13px;font-weight:700;
+  color:var(--muted);background:none;border:none;cursor:pointer;
+  border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s}
+.mnav.active{color:var(--accent);border-bottom-color:var(--accent)}
+main{padding:12px;max-width:1000px;margin:0 auto}
+.mpage{display:none}.mpage.active{display:block}
+.stats5{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:13px}
+@media(max-width:600px){.stats5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:400px){.stats5{grid-template-columns:repeat(2,1fr)}}
+.st{background:var(--card);border:1px solid var(--border);border-radius:var(--r);
+  padding:12px;text-align:center;border-top:3px solid var(--sc,var(--accent))}
+.st-v{font-size:24px;font-weight:900;color:var(--sc,var(--accent));line-height:1}
+.st-l{font-size:10px;color:var(--muted);margin-top:3px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px;margin-bottom:12px}
+.ch{font-size:13px;font-weight:700;margin-bottom:11px;display:flex;align-items:center;gap:7px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{text-align:right;padding:7px 9px;font-size:11px;color:var(--muted);font-weight:700;
+  border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:8px 9px;font-size:12px;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.02)}
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.bp{background:rgba(16,185,129,.15);color:var(--green)}
+.bl{background:rgba(234,179,8,.15);color:var(--yellow)}
+.ba{background:rgba(244,63,94,.15);color:var(--red)}
+.bbr{background:rgba(245,158,11,.15);color:var(--orange)}
+.red-val{color:var(--red) !important;font-weight:700}
+.tbs{display:flex;gap:5px}
+.tb{padding:4px 9px;border:none;border-radius:6px;font-family:'Cairo',sans-serif;font-size:11px;font-weight:700;cursor:pointer}
+.tbe{background:rgba(79,142,247,.15);color:var(--accent)}
+.tbd{background:rgba(244,63,94,.15);color:var(--red)}
+.flbl{font-size:12px;color:var(--muted);margin-bottom:4px;display:block}
+.finp,.fsel{width:100%;background:var(--s1);border:1px solid var(--border);border-radius:9px;
+  padding:9px 11px;color:var(--text);font-family:'Cairo',sans-serif;font-size:13px;outline:none;transition:border-color .2s}
+.finp:focus,.fsel:focus{border-color:var(--accent)}
+.fsel option{background:var(--s1)}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.frow{grid-template-columns:1fr}}
+.fg{margin-bottom:10px}
+.btn-p{background:linear-gradient(135deg,var(--accent),var(--ag));color:#fff;
+  padding:9px 17px;border:none;border-radius:9px;
+  font-family:'Cairo',sans-serif;font-weight:800;font-size:13px;cursor:pointer}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(3px);
+  display:none;align-items:center;justify-content:center;z-index:400;padding:14px}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:17px;
+  padding:19px;width:100%;max-width:390px}
+.modal h3{font-size:15px;font-weight:800;margin-bottom:12px}
+.m-actions{display:flex;gap:9px;margin-top:12px}
+.btn-cancel{flex:1;padding:9px;background:var(--s1);border:1px solid var(--border);
+  border-radius:9px;color:var(--text);font-family:'Cairo',sans-serif;font-weight:700;cursor:pointer}
+.btn-save{flex:1;padding:9px;background:var(--accent);border:none;border-radius:9px;
+  color:#fff;font-family:'Cairo',sans-serif;font-weight:800;cursor:pointer}
+.btn-danger{flex:1;padding:9px;background:var(--red);border:none;border-radius:9px;
+  color:#fff;font-family:'Cairo',sans-serif;font-weight:800;cursor:pointer}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--card);border:1px solid var(--accent);border-radius:11px;padding:9px 20px;
+  font-size:13px;font-weight:700;color:var(--accent);z-index:999;transition:transform .3s;pointer-events:none;
+  box-shadow:0 8px 30px rgba(79,142,247,.25)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+.toast.err{border-color:var(--red);color:var(--red)}
+.empty{text-align:center;padding:24px;color:var(--muted)}
+.ei{font-size:30px;margin-bottom:6px}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.shift-tag{display:inline-block;background:rgba(79,142,247,.1);color:var(--accent);
+  border-radius:7px;padding:2px 7px;font-size:11px;font-weight:700}
+.warn-box{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);
+  border-radius:10px;padding:11px 13px;font-size:12px;color:var(--red);margin-bottom:12px;display:none}
+</style>
+</head>
+<body>
+
+<!-- NOTIFICATION BAR (manager) -->
+<div id="notif-bar" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;
+  padding:14px 20px;color:#fff;font-family:Cairo,sans-serif;font-size:15px;font-weight:700;
+  text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.4);transition:all .3s"></div>
+
+<!-- EMPLOYEE ALERT OVERLAY -->
+<div id="emp-alert" style="display:none;position:fixed;inset:0;z-index:8000;
+  background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:20px">
+  <div id="emp-alert-box" style="background:#fff;border-radius:20px;padding:28px;
+    max-width:320px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)">
+    <div id="emp-alert-ico" style="font-size:52px;margin-bottom:10px">⚠️</div>
+    <div id="emp-alert-msg" style="font-size:16px;font-weight:800;color:#1e293b;margin-bottom:18px"></div>
+    <button onclick="document.getElementById('emp-alert').style.display='none'"
+      style="background:#f43f5e;color:#fff;border:none;border-radius:10px;padding:11px 28px;
+      font-family:Cairo,sans-serif;font-size:15px;font-weight:800;cursor:pointer">حسناً</button>
+  </div>
+</div>
+
+<!-- COOLDOWN OVERLAY -->
+<div id="cooldown-overlay">
+  <div class="ico">🔒</div>
+  <h2>تم قفل النظام مؤقتاً</h2>
+  <p>محاولات خاطئة متعددة — انتظر</p>
+  <div id="cooldown-timer">60</div>
+  <p style="color:var(--muted);font-size:12px">ثانية</p>
+</div>
+
+<!-- KIOSK -->
+<div id="kiosk">
+  <div class="kiosk-top">
+    <img class="shop-logo-img" src="data:image/jpeg;base64,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" alt="SNAP FILTER PHONES">
+    <div class="kiosk-title">SNAP FILTER PHONES</div>
+    <div class="kiosk-sub">نظام الحضور والانصراف</div>
+  </div>
+  <div class="kiosk-clock" id="kiosk-clock">00:00:00</div>
+  <div class="kiosk-date" id="kiosk-date"></div>
+  <div class="pin-box">
+    <div class="pin-label" id="pin-label">أدخل رقمك السري (4 أرقام)</div>
+    <div class="pin-display">
+      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
+      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
+    </div>
+    <div class="numpad">
+      <button class="np-btn" onclick="pinKey('1')">1</button>
+      <button class="np-btn" onclick="pinKey('2')">2</button>
+      <button class="np-btn" onclick="pinKey('3')">3</button>
+      <button class="np-btn" onclick="pinKey('4')">4</button>
+      <button class="np-btn" onclick="pinKey('5')">5</button>
+      <button class="np-btn" onclick="pinKey('6')">6</button>
+      <button class="np-btn" onclick="pinKey('7')">7</button>
+      <button class="np-btn" onclick="pinKey('8')">8</button>
+      <button class="np-btn" onclick="pinKey('9')">9</button>
+      <button class="np-btn np-del" onclick="pinDel()">⌫</button>
+      <button class="np-btn" onclick="pinKey('0')">0</button>
+      <button class="np-btn np-enter" onclick="pinEnter()">دخول ←</button>
+    </div>
+    <div class="lock-warning" id="lock-warn"></div>
+  </div>
+  <div class="mgr-link" onclick="openMgrLogin()">👑 دخول المدير</div>
+</div>
+
+<!-- ACTION SCREEN -->
+<div id="action-screen">
+  <div class="act-header">
+    <div class="act-logo-row">
+      <img src="data:image/jpeg;base64,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" alt="logo">
+      <div>
+        <div class="act-emp-name" id="act-name"></div>
+        <div class="act-emp-role" id="act-role"></div>
+        <div class="act-shift-badge" id="act-shift-badge"></div>
+      </div>
+    </div>
+    <button class="btn-back-kiosk" onclick="backToKiosk()">← رجوع</button>
+  </div>
+  <div class="act-body">
+    <div class="act-clock-wrap">
+      <div class="act-clock" id="act-clock">00:00:00</div>
+      <div class="act-date" id="act-date"></div>
+    </div>
+    <div class="status-pill">
+      <div class="sdot grey" id="act-dot"></div>
+      <div>
+        <div class="s-txt" id="act-status">لم تسجّل بعد</div>
+        <div class="s-time" id="act-stime"></div>
+      </div>
+    </div>
+    <div class="act-btns">
+      <button class="act-btn a-in"  id="ab-in"  onclick="doAction('in')"><span class="ico">✅</span>تسجيل حضور</button>
+      <button class="act-btn a-out" id="ab-out" onclick="doAction('out')" disabled><span class="ico">🚪</span>تسجيل انصراف</button>
+      <button class="act-btn a-brk" id="ab-brk" onclick="doAction('break')" disabled><span class="ico">☕</span>بداية الاستراحة</button>
+      <button class="act-btn a-bck" id="ab-bck" onclick="doAction('back')" disabled><span class="ico">🔙</span>رجوع من الاستراحة</button>
+      <button class="act-btn a-tmp" id="ab-tmp" onclick="doAction('tmpout')" disabled style="grid-column:span 1"><span class="ico">🚶</span>خروج مؤقت</button>
+      <button class="act-btn a-tmb" id="ab-tmb" onclick="doAction('tmpin')" disabled style="grid-column:span 1"><span class="ico">🏃</span>رجوع مؤقت</button>
+    </div>
+    <div class="act-hist">
+      <div class="hist-title">📋 سجل اليوم</div>
+      <div id="act-hist-list"><div class="empty"><div class="ei">📋</div>لا توجد سجلات بعد</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- MANAGER LOGIN -->
+<div id="mgr-login" style="display:none">
+  <div class="mgr-login-box">
+    <img class="mgr-login-logo" src="data:image/jpeg;base64,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" alt="logo">
+    <h2>👑 دخول المدير</h2>
+    <p>أدخل كلمة مرور المدير (6 أرقام)</p>
+    <div class="mgr-pin-display">
+      <div class="mgr-pin-dot" id="mpd0"></div><div class="mgr-pin-dot" id="mpd1"></div>
+      <div class="mgr-pin-dot" id="mpd2"></div><div class="mgr-pin-dot" id="mpd3"></div>
+      <div class="mgr-pin-dot" id="mpd4"></div><div class="mgr-pin-dot" id="mpd5"></div>
+    </div>
+    <div class="mgr-numpad">
+      <button class="mnp" onclick="mgrKey('1')">1</button>
+      <button class="mnp" onclick="mgrKey('2')">2</button>
+      <button class="mnp" onclick="mgrKey('3')">3</button>
+      <button class="mnp" onclick="mgrKey('4')">4</button>
+      <button class="mnp" onclick="mgrKey('5')">5</button>
+      <button class="mnp" onclick="mgrKey('6')">6</button>
+      <button class="mnp" onclick="mgrKey('7')">7</button>
+      <button class="mnp" onclick="mgrKey('8')">8</button>
+      <button class="mnp" onclick="mgrKey('9')">9</button>
+      <button class="mnp mnp-del" onclick="mgrDel()">⌫</button>
+      <button class="mnp" onclick="mgrKey('0')">0</button>
+      <button class="mnp mnp-enter" onclick="mgrEnter()">دخول</button>
+    </div>
+    <div class="mgr-lock-warn" id="mgr-lock-warn"></div>
+    <button class="btn-mgr-cancel" onclick="closeMgrLogin()">إلغاء</button>
+  </div>
+</div>
+
+<!-- MANAGER DASHBOARD -->
+<div id="mgr-dash">
+  <div class="mgr-header">
+    <div class="mh-left">
+      <img class="mh-logo-img" src="data:image/jpeg;base64,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" alt="logo">
+      <div><div class="mh-title">لوحة المدير</div><div class="mh-sub">SNAP FILTER PHONES</div></div>
+    </div>
+    <div><div class="mh-clock" id="mgr-clock">00:00:00</div><div class="mh-date" id="mgr-date"></div></div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div id="fb-dot" style="width:10px;height:10px;border-radius:50%;background:#f43f5e;transition:background .5s" title="جاري الاتصال..."></div>
+      <button class="btn-mgr-exit" onclick="exitMgr()">خروج</button>
+    </div>
+  </div>
+  <nav class="mgr-nav">
+    <button class="mnav active" onclick="mTab('today',this)">📅 اليوم</button>
+    <button class="mnav" onclick="mTab('records',this)">📋 السجلات</button>
+    <button class="mnav" onclick="mTab('employees',this)">👥 الموظفون</button>
+    <button class="mnav" onclick="mTab('settings',this)">⚙️ الإعدادات</button>
+  </nav>
+  <main>
+
+    <!-- TODAY -->
+    <div class="mpage active" id="mt-today">
+      <div class="stats5">
+        <div class="st" style="--sc:var(--green)"><div class="st-v" id="s-p">0</div><div class="st-l">حاضر</div></div>
+        <div class="st" style="--sc:var(--red)"><div class="st-v" id="s-a">0</div><div class="st-l">غائب</div></div>
+        <div class="st" style="--sc:var(--yellow)"><div class="st-v" id="s-l">0</div><div class="st-l">متأخر</div></div>
+        <div class="st" style="--sc:var(--orange)"><div class="st-v" id="s-b">0</div><div class="st-l">في استراحة</div></div>
+        <div class="st" style="--sc:var(--muted)"><div class="st-v" id="s-o">0</div><div class="st-l">انصرف</div></div>
+      </div>
+      <div class="card">
+        <div class="ch">📅 سجل اليوم — <span id="today-lbl" style="color:var(--muted);font-weight:400;font-size:12px"></span></div>
+        <div class="tw" id="today-tbl"><div class="empty"><div class="ei">📋</div>لا توجد سجلات</div></div>
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="mpage" id="mt-records">
+      <div class="card">
+        <div class="ch">🔍 فلترة السجلات</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+          <div class="fg" style="flex:1;min-width:120px"><label class="flbl">الموظف</label><select class="fsel" id="rf-emp"></select></div>
+          <div class="fg" style="flex:1;min-width:110px"><label class="flbl">من</label><input class="finp" id="rf-from" type="date"></div>
+          <div class="fg" style="flex:1;min-width:110px"><label class="flbl">إلى</label><input class="finp" id="rf-to" type="date"></div>
+          <button class="btn-p" style="margin-bottom:10px" onclick="loadRecs()">عرض</button>
+        </div>
+      </div>
+      <div class="card"><div class="ch">📋 النتائج</div><div class="tw" id="recs-tbl"><div class="empty"><div class="ei">📊</div>اضغط عرض</div></div></div>
+    </div>
+
+    <!-- EMPLOYEES -->
+    <div class="mpage" id="mt-employees">
+      <div class="card">
+        <div class="ch">➕ إضافة موظف</div>
+        <div id="add-emp-warn" class="warn-box"></div>
+        <div class="frow">
+          <div class="fg"><label class="flbl">الاسم الكامل *</label><input class="finp" id="ne-n" placeholder="اسم الموظف"></div>
+          <div class="fg"><label class="flbl">المنصب</label><input class="finp" id="ne-r" placeholder="بائع، محاسب..."></div>
+          <div class="fg"><label class="flbl">PIN (4 أرقام) *</label><input class="finp" id="ne-p" type="text" inputmode="numeric" maxlength="4" placeholder="1234" dir="ltr"></div>
+          <div class="fg"><label class="flbl">بداية الدوام *</label><input class="finp" id="ne-ss" type="time" value="09:00"></div>
+          <div class="fg"><label class="flbl">نهاية الدوام *</label><input class="finp" id="ne-se" type="time" value="17:00"></div>
+          <div class="fg"><label class="flbl">مدة الاستراحة (دقيقة)</label><input class="finp" id="ne-brk" type="number" min="0" max="180" value="30" placeholder="30"></div>
+          <div class="fg"><label class="flbl">رقم الهاتف</label><input class="finp" id="ne-ph" type="tel" placeholder="05xxxxxxxx"></div>
+        </div>
+        <button class="btn-p" onclick="addEmp()">➕ إضافة</button>
+      </div>
+      <div class="card"><div class="ch">👥 قائمة الموظفين</div><div class="tw" id="emp-tbl"></div></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="mpage" id="mt-settings">
+      <div class="card" style="max-width:370px">
+        <div class="ch">🔑 تغيير PIN المدير</div>
+        <div class="fg"><label class="flbl">PIN الحالي</label><input class="finp" id="op" type="password" inputmode="numeric" maxlength="6"></div>
+        <div class="fg"><label class="flbl">PIN الجديد (6 أرقام على الأقل)</label><input class="finp" id="np1" type="password" inputmode="numeric" maxlength="8"></div>
+        <div class="fg"><label class="flbl">تأكيد PIN الجديد</label><input class="finp" id="np2" type="password" inputmode="numeric" maxlength="8"></div>
+        <button class="btn-p" onclick="changeMgrPin()">💾 حفظ</button>
+      </div>
+      <div class="card" style="max-width:370px">
+        <div class="ch">📧 إرسال التقرير الشهري</div>
+        <p style="color:var(--muted);font-size:13px;margin-bottom:12px;line-height:2">
+          يولد تقرير شهري كامل ويفتح إيميلك جاهزاً للإرسال
+        </p>
+        <div class="fg">
+          <label class="flbl">اختر الشهر</label>
+          <select class="fsel" id="report-month"></select>
+        </div>
+        <button class="btn-p" onclick="sendMonthlyReport()" style="width:100%">
+          📧 إرسال التقرير على الإيميل
+        </button>
+        <div id="report-status" style="margin-top:10px;font-size:12px;color:var(--green);display:none"></div>
+      </div>
+
+      <div class="card">
+        <div class="ch">ℹ️ معلومات النظام</div>
+        <p style="color:var(--muted);font-size:13px;line-height:2.2">
+          🔒 <strong style="color:var(--text)">الحماية الأمنية:</strong><br>
+          • قفل تلقائي 60 ثانية بعد 5 محاولات خاطئة متتالية<br>
+          • لا يمكن تسجيل نفس الإجراء مرتين في اليوم<br>
+          • لا يمكن الانصراف قبل الحضور<br>
+          • جميع البيانات محفوظة محلياً في المتصفح<br><br>
+          📋 <strong style="color:var(--text)">تعليمات الاستخدام:</strong><br>
+          • الموظف يدخل الـ PIN → يختار الإجراء → يعود تلقائياً بعد 30 ثانية<br>
+          • المدير يضغط "دخول المدير" ويدخل الـ PIN (6 أرقام)<br>
+          • <strong style="color:var(--gold)">PIN المدير الافتراضي: 123456</strong><br>
+          • الأوقات باللون الأحمر = تأخير أو انصراف مبكر
+        </p>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-bg" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ تعديل السجل</h3>
+    <input type="hidden" id="edit-id">
+    <div class="frow">
+      <div class="fg"><label class="flbl">وقت الحضور</label><input class="finp" id="ei" type="time"></div>
+      <div class="fg"><label class="flbl">وقت الانصراف</label><input class="finp" id="eo" type="time"></div>
+      <div class="fg"><label class="flbl">بداية الاستراحة</label><input class="finp" id="eb" type="time"></div>
+      <div class="fg"><label class="flbl">نهاية الاستراحة</label><input class="finp" id="ebk" type="time"></div>
+    </div>
+    <div class="fg"><label class="flbl">الحالة</label>
+      <select class="fsel" id="es">
+        <option value="present">حاضر</option>
+        <option value="late">متأخر</option>
+        <option value="absent">غائب</option>
+      </select>
+    </div>
+    <div class="fg"><label class="flbl">ملاحظة</label><input class="finp" id="en" placeholder="اختياري"></div>
+    <div class="m-actions">
+      <button class="btn-cancel" onclick="closeModal('edit-modal')">إلغاء</button>
+      <button class="btn-save" onclick="saveEdit()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT EMPLOYEE MODAL -->
+<div class="modal-bg" id="edit-emp-modal">
+  <div class="modal">
+    <h3>✏️ تعديل بيانات الموظف</h3>
+    <input type="hidden" id="ee-id">
+    <div class="frow">
+      <div class="fg"><label class="flbl">الاسم الكامل *</label><input class="finp" id="ee-n" placeholder="اسم الموظف"></div>
+      <div class="fg"><label class="flbl">المنصب</label><input class="finp" id="ee-r" placeholder="بائع، محاسب..."></div>
+      <div class="fg"><label class="flbl">PIN الجديد (4 أرقام)</label><input class="finp" id="ee-p" type="text" inputmode="numeric" maxlength="4" placeholder="اتركه فارغاً للإبقاء على القديم" dir="ltr"></div>
+      <div class="fg"><label class="flbl">بداية الدوام</label><input class="finp" id="ee-ss" type="time"></div>
+      <div class="fg"><label class="flbl">نهاية الدوام</label><input class="finp" id="ee-se" type="time"></div>
+      <div class="fg"><label class="flbl">مدة الاستراحة (دقيقة)</label><input class="finp" id="ee-brk" type="number" min="0" max="180"></div>
+      <div class="fg"><label class="flbl">رقم الهاتف</label><input class="finp" id="ee-ph" type="tel" placeholder="05xxxxxxxx"></div>
+    </div>
+    <div id="ee-warn" class="warn-box"></div>
+    <div class="m-actions">
+      <button class="btn-cancel" onclick="closeModal('edit-emp-modal')">إلغاء</button>
+      <button class="btn-save" onclick="saveEmpEdit()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-bg" id="del-modal">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:42px;margin-bottom:9px">⚠️</div>
+    <h3>تأكيد الحذف</h3>
+    <p style="color:var(--muted);font-size:12px;margin:9px 0 18px">هل أنت متأكد؟ لا يمكن التراجع.</p>
+    <div class="m-actions">
+      <button class="btn-cancel" onclick="closeModal('del-modal')">إلغاء</button>
+      <button class="btn-danger" id="del-ok">حذف</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  SECURITY CONFIG
+// ═══════════════════════════════════════════════
+const SEC = {
+  MAX_ATTEMPTS: 5,
+  LOCKOUT_SECS: 60,
+  SESSION_TIMEOUT: 30 * 60 * 1000, // 30 min mgr session
+  AUTO_BACK: 30000,                 // 30s back to kiosk
+};
+
+// ═══════════════════════════════════════════════
+//  STORAGE KEYS
+// ═══════════════════════════════════════════════
+const K = {
+  MGR: 'sfp_mgr_pin_v4',
+  EMP: 'sfp_emps_v4',
+  REC: 'sfp_recs_v4',
+  ATTEMPTS: 'sfp_attempts',
+  LOCKUNTIL: 'sfp_lockuntil',
+  MGR_ATT: 'sfp_mgr_att',
+  MGR_LOCK: 'sfp_mgr_lock',
+};
+
+// ═══════════════════════════════════════════════
+//  SAFE STORAGE (try/catch for private browsing)
+// ═══════════════════════════════════════════════
+const store = {
+  get(k, def=null){ try{ const v=localStorage.getItem(k); return v===null?def:JSON.parse(v); }catch(e){ return def; } },
+  set(k,v){ try{ localStorage.setItem(k,JSON.stringify(v)); return true; }catch(e){ return false; } },
+  del(k){ try{ localStorage.removeItem(k); }catch(e){} }
+};
+
+const getMgrPin = () => store.get(K.MGR,'123456');
+const getEmps   = () => store.get(K.EMP,[]);
+const getRecs   = () => store.get(K.REC,[]);
+const saveEmps  = d => { store.set(K.EMP,d); fbPush('employees',d); return true; };
+const saveRecs  = d => { store.set(K.REC,d); fbPush('records',d);   return true; };
+
+// ═══════════════════════════════════════════════
+//  FIREBASE
+// ═══════════════════════════════════════════════
+const FB_URL='https://snap-filter-staff-attendance-default-rtdb.asia-southeast1.firebasedatabase.app';
+
+// ═══════════════════════════════════════════════
+//  ALERT SYSTEM (sound + vibration)
+// ═══════════════════════════════════════════════
+let lastRecIds = new Set();
+
+function showEmpAlert(msg, type){
+  try{ if(navigator.vibrate) navigator.vibrate(type==='warn'?[200,100,200,100,200]:[300]); }catch(e){}
+  const overlay=document.getElementById('emp-alert');
+  const box=document.getElementById('emp-alert-box');
+  const ico=document.getElementById('emp-alert-ico');
+  const msgEl=document.getElementById('emp-alert-msg');
+  if(!overlay) return;
+  ico.textContent = type==='warn'?'⚠️':'🔴';
+  msgEl.textContent = msg;
+  box.style.borderTop = type==='warn'?'5px solid #f59e0b':'5px solid #f43f5e';
+  overlay.style.display='flex';
+  // Auto close after 8 seconds
+  clearTimeout(overlay._t);
+  overlay._t = setTimeout(()=>{ overlay.style.display='none'; }, 8000);
+}
+
+function playBeep(type){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain); gain.connect(ctx.destination);
+    if(type==='in'){
+      osc.frequency.value=880; gain.gain.value=0.3;
+      osc.start(); osc.stop(ctx.currentTime+0.15);
+      setTimeout(()=>{ const o2=ctx.createOscillator(),g2=ctx.createGain();
+        o2.connect(g2);g2.connect(ctx.destination);
+        o2.frequency.value=1100;g2.gain.value=0.3;
+        o2.start();o2.stop(ctx.currentTime+0.2); },180);
+    } else {
+      osc.frequency.value=440; gain.gain.value=0.3;
+      osc.start(); osc.stop(ctx.currentTime+0.3);
+    }
+  }catch(e){}
+  try{ if(navigator.vibrate){ navigator.vibrate(type==='in'?[100,50,100]:[200]); } }catch(e){}
+}
+
+function showAlert(msg, type){
+  playBeep(type);
+  const el = document.getElementById('notif-bar');
+  if(!el) return;
+  el.textContent = msg;
+  el.style.background = type==='in'?'#10b981':'#f43f5e';
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(()=>{ el.style.display='none'; }, 5000);
+}
+
+function checkNewActivity(recs){
+  recs.forEach(rec=>{
+    const keyIn  = rec.id+'_in';
+    const keyOut = rec.id+'_out';
+    if(rec.checkIn && !lastRecIds.has(keyIn)){
+      if(lastRecIds.size>0) showAlert('✅ '+rec.empName+' — سجّل حضوره '+rec.checkIn, 'in');
+      lastRecIds.add(keyIn);
+    }
+    if(rec.checkOut && !lastRecIds.has(keyOut)){
+      if(lastRecIds.size>0) showAlert('🚪 '+rec.empName+' — انصرف '+rec.checkOut, 'out');
+      lastRecIds.add(keyOut);
+    }
+  });
+}
+let fbOnline=false, fbSyncTimer=null;
+
+function fbDot(on){
+  fbOnline=on;
+  const el=document.getElementById('fb-dot');
+  if(el){ el.style.background=on?'#10b981':'#f43f5e'; el.title=on?'متصل بالسحابة':'غير متصل'; }
+}
+async function fbPush(path,data){
+  try{
+    const res=await fetch(FB_URL+'/'+path+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    fbDot(res.ok);
+  }catch(e){ fbDot(false); }
+}
+async function fbPull(){
+  try{
+    const [eR,rR]=await Promise.all([fetch(FB_URL+'/employees.json'),fetch(FB_URL+'/records.json')]);
+    if(eR.ok){ const e=await eR.json(); if(Array.isArray(e)&&e.length) store.set(K.EMP,e); }
+    if(rR.ok){
+      const r=await rR.json();
+      if(Array.isArray(r)){
+        store.set(K.REC,r);
+        // Check for new check-ins/outs only when manager dashboard is open
+        if(document.getElementById('mgr-dash').style.display!=='none'){
+          checkNewActivity(r.filter(rec=>rec.date===todayStr()));
+        }
+      }
+    }
+    fbDot(true);
+  }catch(e){ fbDot(false); }
+}
+function startFbSync(){ fbSyncTimer=setInterval(async()=>{ await fbPull(); renderTodayStats(); },30000); }
+function stopFbSync(){  clearInterval(fbSyncTimer); }
+// Pull on load — then push local data up
+fbPull().then(()=>{
+  const emps=getEmps(); if(emps.length) fbPush('employees',emps);
+  const recs=getRecs(); if(recs.length) fbPush('records',recs);
+});
+
+// Auto-push every 60 seconds from kiosk (no manager login needed)
+setInterval(()=>{
+  const emps=getEmps(); if(emps.length) fbPush('employees',emps);
+  const recs=getRecs(); if(recs.length) fbPush('records',recs);
+}, 60000);
+
+// ═══════════════════════════════════════════════
+//  SANITIZE (XSS protection)
+// ═══════════════════════════════════════════════
+function esc(s){
+  if(typeof s !== 'string') return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+}
+function cleanStr(s,maxLen=50){
+  if(typeof s !== 'string') return '';
+  return s.trim().slice(0,maxLen);
+}
+function cleanPin(s){
+  return String(s||'').replace(/\D/g,'').slice(0,6);
+}
+
+// ═══════════════════════════════════════════════
+//  DEFAULT EMPLOYEES (مايو ١)
+// ═══════════════════════════════════════════════
+if(!getEmps().length){
+  saveEmps([
+    {id:'emp1',name:'محمد زكريا',role:'موظف',pin:'1111',shiftStart:'09:30',shiftEnd:'12:00',breakMins:90,phone:'',emoji:'👨‍💼'},
+    {id:'emp2',name:'أحمد حلمي', role:'موظف',pin:'2222',shiftStart:'12:00',shiftEnd:'00:00',breakMins:90,phone:'',emoji:'👨‍🔧'},
+  ]);
+}
+
+// ═══════════════════════════════════════════════
+//  CLOCK
+// ═══════════════════════════════════════════════
+function tick(){
+  const n = new Date();
+  const h = String(n.getHours()).padStart(2,'0');
+  const m = String(n.getMinutes()).padStart(2,'0');
+  const s = String(n.getSeconds()).padStart(2,'0');
+  const t = h+':'+m+':'+s;
+  ['kiosk-clock','act-clock','mgr-clock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent=t; });
+}
+setInterval(tick,1000); tick();
+
+function dateParts(){
+  const now = new Date();
+  const day    = now.toLocaleDateString('ar-SA',{weekday:'long'});
+  const hijri  = now.toLocaleDateString('ar-SA-u-ca-islamic',{day:'numeric',month:'long',year:'numeric'});
+  const miladi = now.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});
+  return {day, hijri, miladi};
+}
+function dateHTML(){
+  const {day,hijri,miladi} = dateParts();
+  return `<span style="display:block;font-size:26px;font-weight:900;color:#f43f5e;letter-spacing:2px;line-height:1.2">${day}</span>
+<span style="display:block;font-size:13px;color:#16a34a;margin-top:5px;font-weight:700">${hijri} هـ</span>
+<span style="display:block;font-size:13px;color:#f43f5e;margin-top:2px;font-weight:600">${miladi} م</span>`;
+}
+function datePlain(){
+  const {day,hijri,miladi} = dateParts();
+  return `${day} — ${hijri} هـ — ${miladi} م`;
+}
+function setDates(){
+  const html = dateHTML();
+  const plain = datePlain();
+  const el1=document.getElementById('kiosk-date');   if(el1) el1.innerHTML=html;
+  const el2=document.getElementById('act-date');     if(el2) el2.innerHTML=html;
+  const el3=document.getElementById('mgr-date');     if(el3) el3.innerHTML=`<span style="font-size:10px;color:var(--muted);line-height:1.6">${plain}</span>`;
+  const el4=document.getElementById('today-lbl');    if(el4) el4.textContent=plain;
+}
+setDates(); setInterval(setDates,60000);
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+function showToast(m,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=m; el.className='toast show'+(type?' '+type:'');
+  clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),3000);
+}
+function closeModal(id){ const el=document.getElementById(id); if(el) el.style.display='none'; }
+
+// ═══════════════════════════════════════════════
+//  LOCKOUT HELPERS
+// ═══════════════════════════════════════════════
+function isLocked(lockKey){
+  const until = store.get(lockKey, 0);
+  return Date.now() < until;
+}
+function getLockRemaining(lockKey){
+  const until = store.get(lockKey, 0);
+  return Math.max(0, Math.ceil((until - Date.now()) / 1000));
+}
+function recordFail(attKey, lockKey){
+  const att = (store.get(attKey, 0)) + 1;
+  store.set(attKey, att);
+  if(att >= SEC.MAX_ATTEMPTS){
+    store.set(lockKey, Date.now() + SEC.LOCKOUT_SECS * 1000);
+    store.set(attKey, 0);
+    return true; // locked now
+  }
+  return false;
+}
+function clearFails(attKey){ store.set(attKey, 0); }
+
+// ═══════════════════════════════════════════════
+//  COOLDOWN OVERLAY (for kiosk)
+// ═══════════════════════════════════════════════
+let cooldownInterval = null;
+function showCooldown(){
+  const overlay = document.getElementById('cooldown-overlay');
+  overlay.style.display = 'flex';
+  document.getElementById('kiosk').style.display = 'none';
+  let rem = getLockRemaining(K.LOCKUNTIL);
+  document.getElementById('cooldown-timer').textContent = rem;
+  clearInterval(cooldownInterval);
+  cooldownInterval = setInterval(()=>{
+    rem = getLockRemaining(K.LOCKUNTIL);
+    document.getElementById('cooldown-timer').textContent = rem;
+    if(rem <= 0){
+      clearInterval(cooldownInterval);
+      overlay.style.display = 'none';
+      document.getElementById('kiosk').style.display = 'flex';
+      document.getElementById('lock-warn').textContent = '';
+    }
+  },1000);
+}
+// Check on load
+if(isLocked(K.LOCKUNTIL)) showCooldown();
+
+// ═══════════════════════════════════════════════
+//  KIOSK PIN
+// ═══════════════════════════════════════════════
+let pinBuffer = '', currentEmp = null, autoBackTimer = null;
+
+function updDots(buf, prefix, len=4, err=false){
+  for(let i=0;i<len;i++){
+    const d=document.getElementById(prefix+i); if(!d) continue;
+    d.className='pin-dot'+(i<buf.length?' filled':'')+(err?' error':'');
+  }
+}
+
+function pinKey(k){
+  if(isLocked(K.LOCKUNTIL)){ showCooldown(); return; }
+  if(pinBuffer.length>=4) return;
+  pinBuffer+=k; updDots(pinBuffer,'pd');
+  if(pinBuffer.length===4) setTimeout(pinEnter,180);
+}
+function pinDel(){ pinBuffer=pinBuffer.slice(0,-1); updDots(pinBuffer,'pd'); }
+
+function pinEnter(){
+  if(isLocked(K.LOCKUNTIL)){ showCooldown(); return; }
+  const emps = getEmps();
+  // Constant-time compare to avoid timing attacks
+  const emp = emps.find(e => cleanPin(e.pin) === cleanPin(pinBuffer));
+  if(!emp){
+    const locked = recordFail(K.ATTEMPTS, K.LOCKUNTIL);
+    updDots('xxxx','pd',4,true);
+    if(locked){
+      pinBuffer=''; updDots('','pd');
+      showCooldown(); return;
+    }
+    const rem = SEC.MAX_ATTEMPTS - store.get(K.ATTEMPTS,0);
+    document.getElementById('lock-warn').textContent = `❌ PIN خاطئ — تبقى ${rem} محاولة`;
+    document.getElementById('pin-label').textContent = 'PIN غير صحيح، حاول مرة أخرى';
+    setTimeout(()=>{
+      pinBuffer=''; updDots('','pd');
+      document.getElementById('pin-label').textContent='أدخل رقمك السري (4 أرقام)';
+    },1200);
+    return;
+  }
+  clearFails(K.ATTEMPTS);
+  document.getElementById('lock-warn').textContent='';
+  pinBuffer=''; updDots('','pd');
+  currentEmp = emp;
+  openActionScreen();
+}
+
+document.addEventListener('keydown',e=>{
+  const kiosk=document.getElementById('kiosk');
+  const mgrLogin=document.getElementById('mgr-login');
+  if(kiosk.style.display!=='none' && mgrLogin.style.display==='none'){
+    if(e.key>='0'&&e.key<='9') pinKey(e.key);
+    else if(e.key==='Backspace') pinDel();
+    else if(e.key==='Enter') pinEnter();
+  }
+});
+
+// ═══════════════════════════════════════════════
+//  ACTION SCREEN
+// ═══════════════════════════════════════════════
+function openActionScreen(){
+  document.getElementById('kiosk').style.display='none';
+  document.getElementById('action-screen').style.display='block';
+  document.getElementById('act-name').textContent = esc(currentEmp.name);
+  document.getElementById('act-role').textContent = esc(currentEmp.role);
+  const sEnd = currentEmp.shiftEnd==='00:00'?'منتصف الليل':currentEmp.shiftEnd;
+  document.getElementById('act-shift-badge').textContent =
+    `⏰ ${currentEmp.shiftStart} — ${sEnd}  |  استراحة ${currentEmp.breakMins||30} دقيقة`;
+  renderActState();
+  resetAutoBack();
+}
+
+function resetAutoBack(){
+  clearTimeout(autoBackTimer);
+  autoBackTimer = setTimeout(backToKiosk, SEC.AUTO_BACK);
+}
+
+let tmpWarnTimer = null;
+function startTmpWarnTimer(rec){
+  clearInterval(tmpWarnTimer);
+  if(!rec||!rec.tmpOuts) return;
+  const active=rec.tmpOuts.find(t=>t.out&&!t.in);
+  if(!active) return;
+  tmpWarnTimer=setInterval(()=>{
+    const recs=getRecs();
+    const r=recs.find(x=>x.empId===currentEmp.id&&x.date===todayStr());
+    if(!r) return;
+    const used=getTmpUsed(r);
+    if(used>=30){
+      clearInterval(tmpWarnTimer);
+      showEmpAlert('⚠️ تجاوزت 30 دقيقة خروج مؤقت! ارجع فوراً','warn');
+      showToast('⚠️ تجاوزت وقت الخروج المؤقت!','err');
+    }
+  },30000); // check every 30s
+}
+document.getElementById('action-screen').addEventListener('click', resetAutoBack);
+document.getElementById('action-screen').addEventListener('touchstart', resetAutoBack);
+
+function backToKiosk(){
+  clearTimeout(autoBackTimer);
+  document.getElementById('action-screen').style.display='none';
+  document.getElementById('kiosk').style.display='flex';
+  currentEmp=null;
+}
+
+function todayStr(){ return new Date().toISOString().split('T')[0]; }
+function timeStr(){
+  const n=new Date();
+  return String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+}
+function getMyRec(){ return getRecs().find(r=>r.empId===currentEmp.id&&r.date===todayStr()); }
+
+function toMins(t){
+  if(!t) return -1;
+  const [h,m]=t.split(':').map(Number); return h*60+m;
+}
+function isLateIn(emp,checkIn){
+  const grace=15; // 15 min grace
+  const s=toMins(emp.shiftStart); const c=toMins(checkIn);
+  if(s<0||c<0) return false;
+  return c > s+grace;
+}
+function isEarlyOut(emp,checkOut){
+  if(!checkOut||!emp.shiftEnd) return false;
+  if(emp.shiftEnd==='00:00') return false; // midnight shift — skip check
+  const s=toMins(emp.shiftEnd); const c=toMins(checkOut);
+  return c < s-5; // 5 min buffer
+}
+function calcWorked(rec){
+  if(!rec||!rec.checkIn||!rec.checkOut) return null;
+  let mins = toMins(rec.checkOut) - toMins(rec.checkIn);
+  if(mins<0) mins+=24*60;
+  if(rec.breakStart&&rec.breakEnd){
+    let bm=toMins(rec.breakEnd)-toMins(rec.breakStart);
+    if(bm<0) bm+=24*60;
+    mins-=bm;
+  }
+  if(mins<0) return null;
+  const h=Math.floor(mins/60), m=mins%60;
+  return `${h}س ${m}د`;
+}
+function tmpOutSummary(rec){
+  if(!rec||!rec.tmpOuts||!rec.tmpOuts.length) return {used:0,html:'—'};
+  const used=getTmpUsed(rec);
+  const over=used>30;
+  const html=`<span style="${over?'color:var(--red);font-weight:700':''}">${used} د${over?' ⚠️':''}</span>`;
+  return {used,html};
+}
+
+function getTmpUsed(rec){
+  if(!rec||!rec.tmpOuts) return 0;
+  return rec.tmpOuts.reduce((sum,t)=>{
+    if(!t.out) return sum;
+    const outM=toMins(t.out), inM=t.in?toMins(t.in):toMins(timeStr());
+    let diff=inM-outM; if(diff<0) diff+=24*60;
+    return sum+diff;
+  },0);
+}
+function renderActState(){
+  const rec = getMyRec();
+  const bi=document.getElementById('ab-in'), bo=document.getElementById('ab-out');
+  const bb=document.getElementById('ab-brk'), bk=document.getElementById('ab-bck');
+  const bt=document.getElementById('ab-tmp'), btb=document.getElementById('ab-tmb');
+  const dot=document.getElementById('act-dot'),txt=document.getElementById('act-status'),stm=document.getElementById('act-stime');
+  bi.disabled=bo.disabled=bb.disabled=bk.disabled=true;
+  if(bt) bt.disabled=true; if(btb) btb.disabled=true;
+  dot.className='sdot grey';
+  if(!rec){ bi.disabled=false; txt.textContent='لم تسجّل حضورك بعد'; stm.textContent=''; }
+  else if(rec.checkOut){ dot.className='sdot r'; txt.textContent='انصرفت — إلى اللقاء 👋'; stm.textContent='الانصراف: '+rec.checkOut; }
+  else if(rec.breakStart&&!rec.breakEnd){ bk.disabled=false; dot.className='sdot o'; txt.textContent='في الاستراحة الكبيرة ☕'; stm.textContent='بدأت: '+rec.breakStart; }
+  else if(rec.tmpOuts&&rec.tmpOuts.some(t=>t.out&&!t.in)){
+    if(btb) btb.disabled=false;
+    dot.className='sdot o';
+    const used=getTmpUsed(rec);
+    const over=used>30;
+    txt.textContent= over?'⚠️ تجاوزت وقت الخروج المؤقت!':'🚶 في خروج مؤقت';
+    stm.textContent=`إجمالي الخروج: ${used} دقيقة${over?' (تجاوز 30 دقيقة)':''}`;
+  }
+  else{
+    bo.disabled=false;
+    if(!rec.breakStart) bb.disabled=false;
+    if(bt) bt.disabled=false;
+    dot.className='sdot g';
+    const used=getTmpUsed(rec);
+    txt.textContent=rec.status==='late'?'⚠️ حاضر (متأخر)':'✅ حاضر في العمل';
+    stm.textContent='الحضور: '+rec.checkIn+(used>0?`  |  خروج مؤقت: ${used} د`:'');
+  }
+  renderActHist(rec);
+}
+
+function renderActHist(rec){
+  const el=document.getElementById('act-hist-list');
+  if(!rec){ el.innerHTML='<div class="empty"><div class="ei">📋</div>لا توجد سجلات بعد</div>'; return; }
+  const items=[];
+  if(rec.checkIn)    items.push({i:'✅',l:'تسجيل الحضور',t:rec.checkIn,red:false});
+  if(rec.breakStart) items.push({i:'☕',l:'بداية الاستراحة الكبيرة',t:rec.breakStart,red:false});
+  if(rec.breakEnd)   items.push({i:'🔙',l:'رجوع من الاستراحة الكبيرة',t:rec.breakEnd,red:false});
+  if(rec.tmpOuts){
+    const used=getTmpUsed(rec);
+    rec.tmpOuts.forEach((t,i)=>{
+      if(t.out) items.push({i:'🚶',l:`خروج مؤقت #${i+1}`,t:t.out,red:false});
+      if(t.in){
+        let diff=toMins(t.in)-toMins(t.out); if(diff<0) diff+=24*60;
+        items.push({i:'🏃',l:`رجوع مؤقت #${i+1} (${diff} د)`,t:t.in,red:false});
+      }
+    });
+    if(used>0){
+      items.push({i:'⏱️',l:'إجمالي الخروج المؤقت',t:used+' دقيقة',red:used>30});
+    }
+  }
+  if(rec.checkOut)   items.push({i:'🚪',l:'تسجيل الانصراف',t:rec.checkOut,red:false});
+  el.innerHTML=items.map(x=>`<div class="hi"><div class="hi-ico">${x.i}</div><div class="hi-lbl" style="${x.red?'color:var(--red)':''}">${x.l}</div><div class="hi-t" style="${x.red?'color:var(--red)':''}">${esc(String(x.t))}</div></div>`).join('');
+}
+
+function doAction(type){
+  clearTimeout(autoBackTimer);
+  const today=todayStr(), time=timeStr();
+  let recs=getRecs();
+  let idx=recs.findIndex(r=>r.empId===currentEmp.id&&r.date===today);
+  let rec=idx>=0?recs[idx]:null;
+
+  // SECURITY: validate state machine
+  if(type==='in'){
+    if(rec){ showToast('⚠️ تم تسجيل حضورك مسبقاً','err'); resetAutoBack(); return; }
+    const late=isLateIn(currentEmp,time);
+    const newRec={
+      id:'r'+Date.now(),empId:currentEmp.id,empName:currentEmp.name,empRole:currentEmp.role,
+      date:today,checkIn:time,checkOut:null,breakStart:null,breakEnd:null,
+      status:late?'late':'present',note:'',
+      shiftStart:currentEmp.shiftStart,shiftEnd:currentEmp.shiftEnd,breakMins:currentEmp.breakMins||30
+    };
+    recs.push(newRec);
+    if(late){
+      showToast('⚠️ تم التسجيل — أنت متأخر','err');
+      showEmpAlert(`⚠️ أنت متأخر عن موعد الدوام! (${currentEmp.shiftStart})`,'warn');
+    } else {
+      showToast('✅ تم تسجيل حضورك');
+    }
+  } else if(type==='out'){
+    if(!rec||rec.checkOut){ showToast('⚠️ لم تسجّل حضوراً أو انصرفت مسبقاً','err'); resetAutoBack(); return; }
+    if(rec.breakStart&&!rec.breakEnd){ showToast('⚠️ أنت في استراحة — سجّل الرجوع أولاً','err'); resetAutoBack(); return; }
+    recs[idx].checkOut=time;
+    const earlyOut=isEarlyOut(currentEmp,time);
+    recs[idx].earlyOut=earlyOut;
+    if(earlyOut){
+      showToast('⚠️ تم التسجيل — انصراف مبكر','err');
+      showEmpAlert(`⚠️ انصرفت قبل نهاية الدوام! (${currentEmp.shiftEnd})`,'warn');
+    } else {
+      showToast('🚪 تم تسجيل انصرافك');
+    }
+  } else if(type==='break'){
+    if(!rec||!rec.checkIn||rec.checkOut||rec.breakStart){ showToast('⚠️ لا يمكن بدء الاستراحة الآن','err'); resetAutoBack(); return; }
+    recs[idx].breakStart=time;
+    showToast('☕ استمتع باستراحتك');
+  } else if(type==='back'){
+    if(!rec||!rec.breakStart||rec.breakEnd){ showToast('⚠️ لست في استراحة','err'); resetAutoBack(); return; }
+    recs[idx].breakEnd=time;
+    recs[idx].status=isLateIn(currentEmp,rec.checkIn)?'late':'present';
+    showToast('🔙 أهلاً برجوعك');
+  } else if(type==='tmpout'){
+    if(!rec||!rec.checkIn||rec.checkOut||rec.breakStart&&!rec.breakEnd){ showToast('⚠️ لا يمكن الخروج المؤقت الآن','err'); resetAutoBack(); return; }
+    if(rec.tmpOuts&&rec.tmpOuts.some(t=>t.out&&!t.in)){ showToast('⚠️ أنت في خروج مؤقت بالفعل','err'); resetAutoBack(); return; }
+    if(!rec.tmpOuts) recs[idx].tmpOuts=[];
+    recs[idx].tmpOuts.push({out:time,in:null});
+    showToast('🚶 سجّل رجوعك لما ترجع');
+    setTimeout(()=>startTmpWarnTimer(recs[idx]),100);
+  } else if(type==='tmpin'){
+    if(!rec||!rec.tmpOuts||!rec.tmpOuts.some(t=>t.out&&!t.in)){ showToast('⚠️ لست في خروج مؤقت','err'); resetAutoBack(); return; }
+    const ti=recs[idx].tmpOuts.findIndex(t=>t.out&&!t.in);
+    recs[idx].tmpOuts[ti].in=time;
+    const used=getTmpUsed(recs[idx]);
+    if(used>30){
+      showToast(`⚠️ تجاوزت وقت الخروج! إجمالي: ${used} دقيقة`,'err');
+      showEmpAlert(`⚠️ تجاوزت وقت الخروج المؤقت! (${used} دقيقة من 30)`,'warn');
+    } else {
+      showToast(`🏃 أهلاً برجوعك — خروج مؤقت: ${used} دقيقة`);
+    }
+  }
+  if(!saveRecs(recs)) showToast('⚠️ تعذّر الحفظ — تحقق من المتصفح','err');
+  renderActState();
+  if(type==='out') setTimeout(backToKiosk,3000);
+  else autoBackTimer=setTimeout(backToKiosk,SEC.AUTO_BACK);
+}
+
+// ═══════════════════════════════════════════════
+//  MANAGER LOGIN
+// ═══════════════════════════════════════════════
+let mgrBuf='', mgrSessionTimer=null;
+
+function openMgrLogin(){
+  if(isLocked(K.MGR_LOCK)){
+    showToast(`🔒 مقفول — انتظر ${getLockRemaining(K.MGR_LOCK)} ثانية`,'err'); return;
+  }
+  mgrBuf=''; updMgrDots('');
+  document.getElementById('mgr-lock-warn').textContent='';
+  document.getElementById('mgr-login').style.display='flex';
+}
+function closeMgrLogin(){
+  mgrBuf=''; updMgrDots('');
+  document.getElementById('mgr-login').style.display='none';
+}
+function updMgrDots(buf,err=false){
+  for(let i=0;i<6;i++){
+    const d=document.getElementById('mpd'+i); if(!d) continue;
+    d.className='mgr-pin-dot'+(i<buf.length?' filled':'')+(err?' error':'');
+  }
+}
+function mgrKey(k){
+  if(isLocked(K.MGR_LOCK)){ closeMgrLogin(); showToast(`🔒 مقفول — انتظر ${getLockRemaining(K.MGR_LOCK)} ثانية`,'err'); return; }
+  if(mgrBuf.length>=6) return;
+  mgrBuf+=k; updMgrDots(mgrBuf);
+  if(mgrBuf.length===6) setTimeout(mgrEnter,180);
+}
+function mgrDel(){ mgrBuf=mgrBuf.slice(0,-1); updMgrDots(mgrBuf); }
+function mgrEnter(){
+  if(mgrBuf.length<6) return;
+  if(cleanPin(mgrBuf)===cleanPin(getMgrPin())){
+    clearFails(K.MGR_ATT);
+    closeMgrLogin();
+    openMgrDash();
+  } else {
+    const locked=recordFail(K.MGR_ATT,K.MGR_LOCK);
+    updMgrDots('xxxxxx',true);
+    if(locked){
+      const warn=document.getElementById('mgr-lock-warn');
+      warn.textContent=`🔒 تم القفل ${SEC.LOCKOUT_SECS} ثانية`;
+      setTimeout(()=>{ mgrBuf=''; updMgrDots(''); warn.textContent=''; closeMgrLogin(); },1500);
+    } else {
+      const rem=SEC.MAX_ATTEMPTS-store.get(K.MGR_ATT,0);
+      document.getElementById('mgr-lock-warn').textContent=`❌ كلمة مرور خاطئة — تبقى ${rem} محاولة`;
+      setTimeout(()=>{ mgrBuf=''; updMgrDots(''); },1200);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  MANAGER DASHBOARD
+// ═══════════════════════════════════════════════
+function openMgrDash(){
+  document.getElementById('kiosk').style.display='none';
+  document.getElementById('mgr-dash').style.display='block';
+  mTab('today', document.querySelector('.mnav'));
+  renderTodayStats();
+  renderEmpTable();
+  populateEmpFilter();
+  initReportMonths();
+  checkMonthlyReminder();
+  startFbSync();
+  // Pull latest and init lastRecIds to avoid false alerts
+  fbPull().then(()=>{
+    renderTodayStats(); renderEmpTable();
+    // Seed lastRecIds with current records so we only alert on NEW activity
+    getRecs().filter(r=>r.date===todayStr()).forEach(rec=>{
+      if(rec.checkIn)  lastRecIds.add(rec.id+'_in');
+      if(rec.checkOut) lastRecIds.add(rec.id+'_out');
+    });
+  });
+  // Session timeout
+  clearTimeout(mgrSessionTimer);
+  mgrSessionTimer=setTimeout(()=>{ showToast('⚠️ انتهت جلسة المدير تلقائياً'); exitMgr(); }, SEC.SESSION_TIMEOUT);
+}
+
+function exitMgr(){
+  clearTimeout(mgrSessionTimer);
+  stopFbSync();
+  lastRecIds = new Set();
+  document.getElementById('mgr-dash').style.display='none';
+  document.getElementById('kiosk').style.display='flex';
+}
+
+function mTab(name, btn){
+  document.querySelectorAll('.mnav').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.mpage').forEach(p=>p.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const pg=document.getElementById('mt-'+name); if(pg) pg.classList.add('active');
+  if(name==='today') renderTodayStats();
+  if(name==='employees') renderEmpTable();
+}
+
+// ═══════════════════════════════════════════════
+//  TODAY STATS
+// ═══════════════════════════════════════════════
+function renderTodayStats(){
+  const today=todayStr();
+  const emps=getEmps(), recs=getRecs();
+  const todayRecs=recs.filter(r=>r.date===today);
+  let p=0,a=0,l=0,b=0,o=0;
+  emps.forEach(emp=>{
+    const rec=todayRecs.find(r=>r.empId===emp.id);
+    if(!rec) a++;
+    else if(rec.checkOut) o++;
+    else if(rec.breakStart&&!rec.breakEnd) b++;
+    else if(rec.status==='late') l++;
+    else p++;
+  });
+  document.getElementById('s-p').textContent=p;
+  document.getElementById('s-a').textContent=a;
+  document.getElementById('s-l').textContent=l;
+  document.getElementById('s-b').textContent=b;
+  document.getElementById('s-o').textContent=o;
+
+  // Table
+  const tbl=document.getElementById('today-tbl');
+  if(!emps.length){ tbl.innerHTML='<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>'; return; }
+  let rows='<table><thead><tr><th>الموظف</th><th>الدوام</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>ساعات العمل</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>';
+  emps.forEach(emp=>{
+    const rec=todayRecs.find(r=>r.empId===emp.id);
+    const sEnd=emp.shiftEnd==='00:00'?'منتصف الليل':emp.shiftEnd;
+    const shift=`${emp.shiftStart}–${sEnd}`;
+    if(!rec){
+      rows+=`<tr><td>${esc(emp.name)}</td><td><span class="shift-tag">${esc(shift)}</span></td>
+        <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
+        <td><span class="badge ba">غائب</span></td>
+        <td><button class="tb tbe" onclick="openAddRec('${esc(emp.id)}')">+ إضافة</button></td></tr>`;
+    } else {
+      const late=isLateIn(emp,rec.checkIn), early=rec.earlyOut;
+      const worked=calcWorked(rec);
+      const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
+      let badge='';
+      if(rec.checkOut) badge=`<span class="badge ${early?'bl':'bp'}">${early?'انصراف مبكر':'انصرف'}</span>`;
+      else if(rec.breakStart&&!rec.breakEnd) badge='<span class="badge bbr">في استراحة</span>';
+      else if(late) badge='<span class="badge bl">متأخر</span>';
+      else badge='<span class="badge bp">حاضر</span>';
+      const tmp=tmpOutSummary(rec);
+      rows+=`<tr>
+        <td>${esc(emp.name)}</td>
+        <td><span class="shift-tag">${esc(shift)}</span></td>
+        <td class="${late?'red-val':''}">${esc(rec.checkIn)}</td>
+        <td class="${early?'red-val':''}">${rec.checkOut?esc(rec.checkOut):'—'}</td>
+        <td>${esc(brk)}</td>
+        <td>${tmp.html}</td>
+        <td>${worked||'—'}</td>
+        <td>${badge}</td>
+        <td class="tbs">
+          <button class="tb tbe" onclick="openEdit('${esc(rec.id)}')">✏️</button>
+          <button class="tb tbd" onclick="openDel('${esc(rec.id)}')">🗑️</button>
+        </td></tr>`;
+    }
+  });
+  rows+='</tbody></table>';
+  tbl.innerHTML=rows;
+}
+
+// ═══════════════════════════════════════════════
+//  RECORDS TAB
+// ═══════════════════════════════════════════════
+function populateEmpFilter(){
+  const sel=document.getElementById('rf-emp');
+  if(!sel) return;
+  const emps=getEmps();
+  sel.innerHTML='<option value="">— الكل —</option>'+emps.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('');
+}
+function loadRecs(){
+  const empId=(document.getElementById('rf-emp')||{}).value||'';
+  const from=(document.getElementById('rf-from')||{}).value||'';
+  const to=(document.getElementById('rf-to')||{}).value||'';
+  let recs=getRecs();
+  if(empId) recs=recs.filter(r=>r.empId===empId);
+  if(from)  recs=recs.filter(r=>r.date>=from);
+  if(to)    recs=recs.filter(r=>r.date<=to);
+  recs=recs.sort((a,b)=>b.date.localeCompare(a.date));
+  const tbl=document.getElementById('recs-tbl');
+  if(!recs.length){ tbl.innerHTML='<div class="empty"><div class="ei">📊</div>لا توجد سجلات</div>'; return; }
+  const emps=getEmps();
+  let rows='<table><thead><tr><th>التاريخ</th><th>الموظف</th><th>الدوام</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>ساعات</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead><tbody>';
+  recs.forEach(rec=>{
+    const emp=emps.find(e=>e.id===rec.empId)||{};
+    const late=isLateIn(emp,rec.checkIn), early=rec.earlyOut;
+    const worked=calcWorked(rec);
+    const sEnd=emp.shiftEnd==='00:00'?'منتصف الليل':emp.shiftEnd;
+    const shift=emp.shiftStart?`${emp.shiftStart}–${sEnd}`:'—';
+    const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
+    let badge='';
+    if(!rec.checkIn) badge='<span class="badge ba">غائب</span>';
+    else if(rec.checkOut) badge=`<span class="badge ${early?'bl':'bp'}">${early?'مبكر':'انصرف'}</span>`;
+    else if(rec.breakStart&&!rec.breakEnd) badge='<span class="badge bbr">استراحة</span>';
+    else if(late) badge='<span class="badge bl">متأخر</span>';
+    else badge='<span class="badge bp">حاضر</span>';
+    rows+=`<tr>
+      <td>${esc(rec.date)}</td>
+      <td>${esc(rec.empName||emp.name||'—')}</td>
+      <td><span class="shift-tag">${esc(shift)}</span></td>
+      <td class="${late?'red-val':''}">${rec.checkIn?esc(rec.checkIn):'—'}</td>
+      <td class="${early?'red-val':''}">${rec.checkOut?esc(rec.checkOut):'—'}</td>
+      <td>${esc(brk)}</td>
+      <td>${worked||'—'}</td>
+      <td>${badge}</td>
+      <td>${esc(rec.note||'')}</td>
+      <td class="tbs">
+        <button class="tb tbe" onclick="openEdit('${esc(rec.id)}')">✏️</button>
+        <button class="tb tbd" onclick="openDel('${esc(rec.id)}')">🗑️</button>
+      </td></tr>`;
+  });
+  rows+='</tbody></table>';
+  tbl.innerHTML=rows;
+}
+
+// ═══════════════════════════════════════════════
+//  EDIT / DELETE
+// ═══════════════════════════════════════════════
+function openEdit(id){
+  const rec=getRecs().find(r=>r.id===id); if(!rec) return;
+  document.getElementById('edit-id').value=id;
+  document.getElementById('ei').value=rec.checkIn||'';
+  document.getElementById('eo').value=rec.checkOut||'';
+  document.getElementById('eb').value=rec.breakStart||'';
+  document.getElementById('ebk').value=rec.breakEnd||'';
+  document.getElementById('es').value=rec.status||'present';
+  document.getElementById('en').value=rec.note||'';
+  document.getElementById('edit-modal').style.display='flex';
+}
+function saveEdit(){
+  const id=document.getElementById('edit-id').value;
+  let recs=getRecs();
+  const idx=recs.findIndex(r=>r.id===id); if(idx<0) return;
+  // sanitize times
+  const timeRx=/^([01]\d|2[0-3]):[0-5]\d$/;
+  const ci=document.getElementById('ei').value;
+  const co=document.getElementById('eo').value;
+  const cb=document.getElementById('eb').value;
+  const cbk=document.getElementById('ebk').value;
+  if(ci&&!timeRx.test(ci)){ showToast('⚠️ وقت الحضور غير صحيح','err'); return; }
+  if(co&&!timeRx.test(co)){ showToast('⚠️ وقت الانصراف غير صحيح','err'); return; }
+  recs[idx].checkIn=ci||null;
+  recs[idx].checkOut=co||null;
+  recs[idx].breakStart=cb||null;
+  recs[idx].breakEnd=cbk||null;
+  recs[idx].status=document.getElementById('es').value;
+  recs[idx].note=cleanStr(document.getElementById('en').value,100);
+  // recalculate earlyOut
+  const emp=getEmps().find(e=>e.id===recs[idx].empId)||{};
+  recs[idx].earlyOut=isEarlyOut(emp,co);
+  if(!saveRecs(recs)){ showToast('⚠️ تعذّر الحفظ','err'); return; }
+  closeModal('edit-modal');
+  showToast('✅ تم الحفظ');
+  renderTodayStats(); loadRecs();
+}
+
+let delTargetId=null;
+function openDel(id){ delTargetId=id; document.getElementById('del-modal').style.display='flex'; }
+document.getElementById('del-ok').onclick=()=>{
+  let recs=getRecs().filter(r=>r.id!==delTargetId);
+  if(!saveRecs(recs)){ showToast('⚠️ تعذّر الحذف','err'); return; }
+  closeModal('del-modal'); delTargetId=null;
+  showToast('🗑️ تم الحذف'); renderTodayStats(); loadRecs();
+};
+
+// Add record manually
+function openAddRec(empId){
+  const emp=getEmps().find(e=>e.id===empId); if(!emp) return;
+  // Create blank rec then open edit
+  const newRec={
+    id:'r'+Date.now(),empId:emp.id,empName:emp.name,empRole:emp.role,
+    date:todayStr(),checkIn:emp.shiftStart,checkOut:null,breakStart:null,breakEnd:null,
+    status:'present',note:'أضافه المدير يدوياً',
+    shiftStart:emp.shiftStart,shiftEnd:emp.shiftEnd,breakMins:emp.breakMins||30,earlyOut:false
+  };
+  let recs=getRecs(); recs.push(newRec); saveRecs(recs);
+  renderTodayStats();
+  openEdit(newRec.id);
+}
+
+// ═══════════════════════════════════════════════
+//  EMPLOYEES TAB
+// ═══════════════════════════════════════════════
+function addEmp(){
+  const warn=document.getElementById('add-emp-warn');
+  warn.style.display='none'; warn.textContent='';
+  const name=cleanStr(document.getElementById('ne-n').value||'',40);
+  const role=cleanStr(document.getElementById('ne-r').value||'',30);
+  const pin=cleanPin(document.getElementById('ne-p').value||'');
+  const ss=document.getElementById('ne-ss').value||'09:00';
+  const se=document.getElementById('ne-se').value||'17:00';
+  const brkMins=parseInt(document.getElementById('ne-brk').value)||30;
+  const phone=cleanStr(document.getElementById('ne-ph').value||'',15);
+
+  if(!name){ warn.textContent='⚠️ اكتب اسم الموظف'; warn.style.display='block'; return; }
+  if(pin.length!==4||!/^\d{4}$/.test(pin)){ warn.textContent='⚠️ الـ PIN يجب أن يكون 4 أرقام بالضبط'; warn.style.display='block'; return; }
+
+  const emps=getEmps();
+  if(emps.find(e=>e.pin===pin)){ warn.textContent='⚠️ هذا الـ PIN مستخدم مسبقاً، اختر آخر'; warn.style.display='block'; return; }
+  if(emps.find(e=>e.name.toLowerCase()===name.toLowerCase())){ warn.textContent='⚠️ يوجد موظف بنفس الاسم'; warn.style.display='block'; return; }
+
+  const emojis=['👨‍💼','👩‍💼','🧑‍💻','👨‍🔧','👩‍🔧','🧑‍🏪','👨‍🎨','👩‍🎨'];
+  emps.push({id:'emp'+Date.now(),name,role,pin,shiftStart:ss,shiftEnd:se,breakMins:brkMins,phone,emoji:emojis[Math.floor(Math.random()*emojis.length)]});
+  if(!saveEmps(emps)){ warn.textContent='⚠️ تعذّر الحفظ'; warn.style.display='block'; return; }
+  showToast('✅ تم إضافة الموظف');
+  ['ne-n','ne-r','ne-p','ne-ph'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  renderEmpTable(); populateEmpFilter();
+}
+
+function renderEmpTable(){
+  const emps=getEmps();
+  const tbl=document.getElementById('emp-tbl'); if(!tbl) return;
+  if(!emps.length){ tbl.innerHTML='<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>'; return; }
+  const sEnd=e=>e.shiftEnd==='00:00'?'منتصف الليل':e.shiftEnd;
+  let rows='<table><thead><tr><th>#</th><th>الاسم</th><th>المنصب</th><th>PIN</th><th>الدوام</th><th>الاستراحة</th><th>هاتف</th><th>إجراء</th></tr></thead><tbody>';
+  emps.forEach((emp,i)=>{
+    rows+=`<tr>
+      <td>${i+1}</td>
+      <td>${esc(emp.emoji||'👤')} ${esc(emp.name)}</td>
+      <td>${esc(emp.role||'—')}</td>
+      <td dir="ltr" style="letter-spacing:3px;font-weight:700;color:var(--accent)">${esc(emp.pin)}</td>
+      <td><span class="shift-tag">${esc(emp.shiftStart)}–${esc(sEnd(emp))}</span></td>
+      <td>${emp.breakMins||30} دقيقة</td>
+      <td>${esc(emp.phone||'—')}</td>
+      <td class="tbs">
+        <button class="tb tbe" onclick="openEmpEdit('${esc(emp.id)}')">✏️ تعديل</button>
+        <button class="tb tbd" onclick="delEmp('${esc(emp.id)}')">🗑️ حذف</button>
+      </td>
+    </tr>`;
+  });
+  rows+='</tbody></table>';
+  tbl.innerHTML=rows;
+}
+
+function openEmpEdit(id){
+  const emp=getEmps().find(e=>e.id===id); if(!emp) return;
+  document.getElementById('ee-id').value=id;
+  document.getElementById('ee-n').value=emp.name||'';
+  document.getElementById('ee-r').value=emp.role||'';
+  document.getElementById('ee-p').value='';
+  document.getElementById('ee-ss').value=emp.shiftStart||'09:00';
+  document.getElementById('ee-se').value=emp.shiftEnd||'17:00';
+  document.getElementById('ee-brk').value=emp.breakMins||30;
+  document.getElementById('ee-ph').value=emp.phone||'';
+  document.getElementById('ee-warn').style.display='none';
+  document.getElementById('edit-emp-modal').style.display='flex';
+}
+
+function saveEmpEdit(){
+  const warn=document.getElementById('ee-warn');
+  warn.style.display='none';
+  const id=document.getElementById('ee-id').value;
+  const name=cleanStr(document.getElementById('ee-n').value||'',40);
+  const role=cleanStr(document.getElementById('ee-r').value||'',30);
+  const pinRaw=document.getElementById('ee-p').value.trim();
+  const ss=document.getElementById('ee-ss').value||'09:00';
+  const se=document.getElementById('ee-se').value||'17:00';
+  const brk=parseInt(document.getElementById('ee-brk').value)||30;
+  const phone=cleanStr(document.getElementById('ee-ph').value||'',15);
+
+  if(!name){ warn.textContent='⚠️ اكتب اسم الموظف'; warn.style.display='block'; return; }
+
+  let emps=getEmps();
+  const idx=emps.findIndex(e=>e.id===id); if(idx<0) return;
+
+  // Validate new PIN if provided
+  if(pinRaw!==''){
+    const pin=cleanPin(pinRaw);
+    if(pin.length!==4||!/^\d{4}$/.test(pin)){ warn.textContent='⚠️ الـ PIN يجب أن يكون 4 أرقام'; warn.style.display='block'; return; }
+    if(emps.find(e=>e.id!==id&&e.pin===pin)){ warn.textContent='⚠️ هذا الـ PIN مستخدم من موظف آخر'; warn.style.display='block'; return; }
+    emps[idx].pin=pin;
+  }
+
+  emps[idx].name=name;
+  emps[idx].role=role;
+  emps[idx].shiftStart=ss;
+  emps[idx].shiftEnd=se;
+  emps[idx].breakMins=brk;
+  emps[idx].phone=phone;
+
+  if(!saveEmps(emps)){ warn.textContent='⚠️ تعذّر الحفظ'; warn.style.display='block'; return; }
+  closeModal('edit-emp-modal');
+  showToast('✅ تم تعديل بيانات الموظف');
+  renderEmpTable(); populateEmpFilter();
+}
+
+function delEmp(id){
+  if(!confirm('هل تريد حذف هذا الموظف؟')) return;
+  const emps=getEmps().filter(e=>e.id!==id);
+  saveEmps(emps); renderEmpTable(); populateEmpFilter();
+  showToast('🗑️ تم حذف الموظف');
+}
+
+// ═══════════════════════════════════════════════
+//  SETTINGS — CHANGE MGR PIN
+// ═══════════════════════════════════════════════
+function initReportMonths(){
+  const sel=document.getElementById('report-month'); if(!sel) return;
+  const now=new Date();
+  sel.innerHTML='';
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const val=d.toISOString().slice(0,7);
+    const lbl=d.toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+    const opt=document.createElement('option');
+    opt.value=val; opt.textContent=lbl;
+    sel.appendChild(opt);
+  }
+}
+
+function sendMonthlyReport(){
+  const monthVal=document.getElementById('report-month').value;
+  if(!monthVal) return;
+  const emps=getEmps(), recs=getRecs();
+  const monthRecs=recs.filter(r=>r.date&&r.date.startsWith(monthVal));
+  const monthLabel=new Date(monthVal+'-01').toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+
+  if(!monthRecs.length){
+    showToast('⚠️ لا توجد سجلات لهذا الشهر','err'); return;
+  }
+
+  // Build report text
+  let body = `تقرير الحضور والانصراف\n`;
+  body += `SNAP FILTER PHONES\n`;
+  body += `الشهر: ${monthLabel}\n`;
+  body += `=================================\n\n`;
+
+  // Stats
+  let totalPresent=0, totalLate=0, totalAbsent=0, totalEarly=0;
+
+  emps.forEach(emp=>{
+    const empRecs=monthRecs.filter(r=>r.empId===emp.id);
+    const sEnd=emp.shiftEnd==='00:00'?'منتصف الليل':emp.shiftEnd;
+    body+=`👤 ${emp.name} (${emp.shiftStart}–${sEnd})\n`;
+    body+=`---------------------------------\n`;
+
+    if(!empRecs.length){
+      body+=`لا توجد سجلات\n\n`;
+      return;
+    }
+
+    let empLate=0, empEarly=0, empAbsent=0, empPresent=0;
+    empRecs.sort((a,b)=>a.date.localeCompare(b.date)).forEach(rec=>{
+      const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short'});
+      const late=isLateIn(emp,rec.checkIn);
+      const early=rec.earlyOut;
+      const worked=calcWorked(rec)||'—';
+      const tmpUsed=getTmpUsed(rec);
+      let flags='';
+      if(late){ flags+='⚠️متأخر '; empLate++; totalLate++; }
+      if(early){ flags+='🔴انصراف مبكر '; empEarly++; totalEarly++; }
+      if(tmpUsed>30) flags+=`⏱️خروج مؤقت(${tmpUsed}د) `;
+      if(rec.checkIn) empPresent++; else empAbsent++;
+      body+=`${dateLabel}: حضور ${rec.checkIn||'—'} | انصراف ${rec.checkOut||'—'} | عمل ${worked} ${flags}\n`;
+    });
+    totalPresent+=empPresent; totalAbsent+=empAbsent;
+    body+=`\nملخص: حضر ${empPresent} يوم | متأخر ${empLate} | انصراف مبكر ${empEarly} | غائب ${empAbsent}\n\n`;
+  });
+
+  body+=`=================================\n`;
+  body+=`إجمالي الشهر:\n`;
+  body+=`✅ أيام حضور: ${totalPresent}\n`;
+  body+=`⚠️ تأخيرات: ${totalLate}\n`;
+  body+=`🔴 انصراف مبكر: ${totalEarly}\n`;
+  body+=`❌ غيابات: ${totalAbsent}\n`;
+  body+=`\nتم الإنشاء: ${new Date().toLocaleDateString('ar-SA')}`;
+
+  const subject=`تقرير الحضور - SNAP FILTER PHONES - ${monthLabel}`;
+  const mailto=`mailto:snapfiltermobiles@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  window.location.href=mailto;
+
+  const st=document.getElementById('report-status');
+  if(st){ st.textContent='✅ تم فتح الإيميل — اضغط إرسال'; st.style.display='block'; }
+
+  // Check if it's start/end of month and show reminder
+  const today=new Date();
+  if(today.getDate()<=3||today.getDate()>=28){
+    showToast('📧 تذكير: أرسل التقرير الشهري!');
+  }
+}
+
+function checkMonthlyReminder(){
+  const today=new Date();
+  const day=today.getDate();
+  const lastKey='sfp_last_reminder_'+today.toISOString().slice(0,7);
+  if((day===1||day===28||day===29||day===30||day===31)&&!store.get(lastKey)){
+    store.set(lastKey,true);
+    const mgr=document.getElementById('mgr-dash');
+    if(mgr&&mgr.style.display!=='none'){
+      showToast('📧 تذكير: حان وقت إرسال التقرير الشهري!');
+    }
+  }
+}
+
+function changeMgrPin(){
+  const op=cleanPin(document.getElementById('op').value||'');
+  const n1=cleanPin(document.getElementById('np1').value||'');
+  const n2=cleanPin(document.getElementById('np2').value||'');
+  if(op!==cleanPin(getMgrPin())){ showToast('❌ كلمة المرور الحالية خاطئة','err'); return; }
+  if(n1.length<6){ showToast('⚠️ الـ PIN الجديد يجب أن يكون 6 أرقام على الأقل','err'); return; }
+  if(n1!==n2){ showToast('⚠️ كلمتا المرور غير متطابقتين','err'); return; }
+  if(n1===op){ showToast('⚠️ اختر PIN مختلفاً','err'); return; }
+  if(!store.set(K.MGR,n1)){ showToast('⚠️ تعذّر الحفظ','err'); return; }
+  ['op','np1','np2'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  showToast('✅ تم تغيير كلمة مرور المدير');
+}
+
+// ═══════════════════════════════════════════════
+//  CLOSE MODALS ON BACKDROP CLICK
+// ═══════════════════════════════════════════════
+document.querySelectorAll('.modal-bg').forEach(bg=>{
+  bg.addEventListener('click',e=>{ if(e.target===bg) bg.style.display='none'; });
+});
+
+// Init mgr-login hidden
+document.getElementById('mgr-login').style.display='none';
+</script>
+</body>
+</html>
