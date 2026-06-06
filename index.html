@@ -1692,10 +1692,15 @@ function getEmpSchedule(emp,dateStr){
   const wknd=isWeekend(dateStr||todayStr());
   if(nm.includes('محمد')){
     if(wknd) return{shiftStart:'12:00',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
+    // الجمعة = 4 (Friday)
+    const _dow = dateStr ? new Date(dateStr+'T12:00:00').getDay() : new Date().getDay();
+    if(_dow===5) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:120,tmpOutMins:30,hasBreak:true};
     return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
   }
   if(nm.includes('أحمد')||nm.includes('احمد')){
-    if(wknd) return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
+    const _adow = dateStr ? new Date(dateStr+'T12:00:00').getDay() : new Date().getDay();
+    if(_adow===0) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:120,tmpOutMins:30,hasBreak:true}; // الأحد
+    if(_adow===6) return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true}; // السبت
     return{shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:40,hasBreak:false};
   }
   return{shiftStart:emp.shiftStart||'09:00',shiftEnd:emp.shiftEnd||'17:00',breakMins:emp.breakMins||30,tmpOutMins:30,hasBreak:true};
