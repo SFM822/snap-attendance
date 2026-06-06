@@ -413,6 +413,7 @@ tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
     <button class="mnav" onclick="mTab('records',this)">📋 السجلات</button>
     <button class="mnav" onclick="mTab('employees',this)">👥 الموظفون</button>
     <button class="mnav" onclick="mTab('timebank',this)">⏱️ بنك الوقت</button>
+    <button class="mnav" onclick="mTab('compensation',this)">🔄 التعويض</button>
     <button class="mnav" onclick="mTab('settings',this)">⚙️ الإعدادات</button>
   </nav>
   <main>
@@ -479,6 +480,26 @@ tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
         </div>
       </div>
       <div id="tb-results"></div>
+    </div>
+
+
+    <!-- COMPENSATION PAGE -->
+    <div class="mpage" id="mt-compensation">
+      <div class="card">
+        <div class="ch">🔄 نظام التعويض الشهري</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:4px">
+          <div class="fg" style="flex:1;min-width:140px">
+            <label class="flbl">اختر الشهر</label>
+            <select class="fsel" id="comp-month"></select>
+          </div>
+          <button class="btn-p" style="margin-bottom:10px" onclick="renderCompensation()">عرض</button>
+        </div>
+        <div style="background:rgba(79,142,247,.06);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);line-height:2">
+          🔴 <strong style="color:var(--text)">يُحسب دين:</strong> تأخير الحضور | تجاوز الاستراحة | تجاوز الخروج المؤقت | خروج مبكر أكثر من مرة في الأسبوع<br>
+          ✅ <strong style="color:var(--text)">يُحسب رصيد:</strong> حضور مبكر | بقاء بعد الدوام | استراحة أقصر من المسموح
+        </div>
+      </div>
+      <div id="comp-results"></div>
     </div>
 
     <!-- SETTINGS -->
@@ -940,6 +961,7 @@ function openActionScreen(){
   document.getElementById('act-shift-badge').textContent=_bt;
   renderActState();
   resetAutoBack();
+  setTimeout(()=>showCompensationAlert(currentEmp), 500);
 }
 
 function resetAutoBack(){
@@ -1225,6 +1247,7 @@ function openMgrDash(){
   populateEmpFilter();
   initReportMonths();
   initTbMonths();
+  initCompMonths();
   checkMonthlyReminder();
   startFbSync();
   // Pull latest and init lastRecIds to avoid false alerts
@@ -1892,6 +1915,313 @@ function calcTimeBank(){
   });
 
   container.innerHTML=html;
+}
+
+
+// ═══════════════════════════════════════════════
+//  نظام التعويض — Compensation System
+// ═══════════════════════════════════════════════
+
+// الأسبوع يبدأ من الاثنين
+// يرجع تاريخ بداية الأسبوع (الاثنين) لأي تاريخ
+function getWeekStart(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  const diff = (day === 0) ? -6 : 1 - day; // الاثنين
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
+// حساب دقائق الخروج المبكر لسجل معين
+function calcEarlyLeaveMins(rec, emp) {
+  if (!rec || !rec.checkOut) return 0;
+  const sched = getEmpSchedule(emp, rec.date);
+  if (sched.shiftEnd === '00:00') return 0;
+  const sEnd = toMins(sched.shiftEnd);
+  const cOut = toMins(rec.checkOut);
+  if (cOut < sEnd) return sEnd - cOut;
+  return 0;
+}
+
+// حساب دقائق التأخير لسجل معين
+function calcLateMins(rec, emp) {
+  if (!rec || !rec.checkIn) return 0;
+  const sched = getEmpSchedule(emp, rec.date);
+  const sStart = toMins(sched.shiftStart);
+  const cIn = toMins(rec.checkIn);
+  if (cIn > sStart + 15) return cIn - sStart;
+  return 0;
+}
+
+// حساب تجاوز الاستراحة
+function calcBreakOverMins(rec, emp) {
+  if (!rec || !rec.breakStart || !rec.breakEnd) return 0;
+  const sched = getEmpSchedule(emp, rec.date);
+  if (!sched.hasBreak || sched.breakMins === 0) return 0;
+  let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
+  if (bUsed < 0) bUsed += 24 * 60;
+  const over = bUsed - sched.breakMins;
+  return over > 0 ? over : 0;
+}
+
+// حساب تجاوز الخروج المؤقت
+function calcTmpOverMins(rec, emp) {
+  if (!rec || !rec.tmpOuts) return 0;
+  const sched = getEmpSchedule(emp, rec.date);
+  const used = getTmpUsed(rec);
+  const over = used - sched.tmpOutMins;
+  return over > 0 ? over : 0;
+}
+
+// حساب ديون التعويض للموظف في شهر معين
+function calcCompensationDebt(empId, monthStr) {
+  const emps = getEmps();
+  const emp = emps.find(e => e.id === empId);
+  if (!emp) return { debtMins: 0, details: [] };
+
+  const recs = getRecs()
+    .filter(r => r.empId === empId && r.date && r.date.startsWith(monthStr))
+    .sort((a, b) => a.date.localeCompare(b.date));
+
+  let totalDebt = 0;
+  const details = [];
+
+  // تجميع السجلات حسب الأسبوع
+  const weeks = {};
+  recs.forEach(rec => {
+    const wk = getWeekStart(rec.date);
+    if (!weeks[wk]) weeks[wk] = [];
+    weeks[wk].push(rec);
+  });
+
+  // حساب الخروج المبكر المسموح (مرة واحدة في الأسبوع)
+  Object.keys(weeks).forEach(wk => {
+    const wkRecs = weeks[wk];
+    let earlyLeaveUsed = 0; // عدد مرات الخروج المبكر المستخدمة هذا الأسبوع
+
+    wkRecs.forEach(rec => {
+      const sched = getEmpSchedule(emp, rec.date);
+      const earlyMins = calcEarlyLeaveMins(rec, emp);
+      const lateMins = calcLateMins(rec, emp);
+      const breakOver = calcBreakOverMins(rec, emp);
+      const tmpOver = calcTmpOverMins(rec, emp);
+
+      // تأخير الحضور → دين دائماً
+      if (lateMins > 0) {
+        totalDebt += lateMins;
+        details.push({ date: rec.date, type: 'تأخير', mins: lateMins, debt: true });
+      }
+
+      // تجاوز الاستراحة → دين دائماً
+      if (breakOver > 0) {
+        totalDebt += breakOver;
+        details.push({ date: rec.date, type: 'تجاوز استراحة', mins: breakOver, debt: true });
+      }
+
+      // تجاوز الخروج المؤقت → دين دائماً
+      if (tmpOver > 0) {
+        totalDebt += tmpOver;
+        details.push({ date: rec.date, type: 'تجاوز خروج مؤقت', mins: tmpOver, debt: true });
+      }
+
+      // خروج مبكر → مسموح مرة واحدة في الأسبوع
+      if (earlyMins > 0) {
+        earlyLeaveUsed++;
+        if (earlyLeaveUsed === 1) {
+          // المرة الأولى مسموحة
+          details.push({ date: rec.date, type: 'خروج مبكر مسموح', mins: earlyMins, debt: false });
+        } else {
+          // المرة الثانية وما بعد → دين
+          totalDebt += earlyMins;
+          details.push({ date: rec.date, type: 'خروج مبكر (تكرار)', mins: earlyMins, debt: true });
+        }
+      }
+    });
+  });
+
+  return { debtMins: totalDebt, details };
+}
+
+// رصيد التعويض المؤدى (الوقت الزائد)
+function calcCompensationCredit(empId, monthStr) {
+  const emps = getEmps();
+  const emp = emps.find(e => e.id === empId);
+  if (!emp) return 0;
+
+  const recs = getRecs()
+    .filter(r => r.empId === empId && r.date && r.date.startsWith(monthStr));
+
+  let credit = 0;
+  recs.forEach(rec => {
+    const sched = getEmpSchedule(emp, rec.date);
+    // حضور مبكر
+    if (rec.checkIn) {
+      const sStart = toMins(sched.shiftStart);
+      const cIn = toMins(rec.checkIn);
+      if (cIn < sStart) credit += sStart - cIn;
+    }
+    // بقاء بعد نهاية الدوام
+    if (rec.checkOut && sched.shiftEnd !== '00:00') {
+      const sEnd = toMins(sched.shiftEnd);
+      const cOut = toMins(rec.checkOut);
+      if (cOut > sEnd) credit += cOut - sEnd;
+    }
+    // استراحة أقصر من المسموح
+    if (rec.breakStart && rec.breakEnd && sched.hasBreak && sched.breakMins > 0) {
+      let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
+      if (bUsed < 0) bUsed += 24 * 60;
+      if (bUsed < sched.breakMins) credit += sched.breakMins - bUsed;
+    }
+  });
+
+  return credit;
+}
+
+// الرصيد الصافي = رصيد - دين
+function getNetBalance(empId, monthStr) {
+  const debt = calcCompensationDebt(empId, monthStr).debtMins;
+  const credit = calcCompensationCredit(empId, monthStr);
+  return credit - debt; // موجب = زائد، سالب = دين
+}
+
+// تنبيه الموظف عند الدخول
+function showCompensationAlert(emp) {
+  const month = todayStr().slice(0, 7);
+  const { debtMins } = calcCompensationDebt(emp.id, month);
+  const credit = calcCompensationCredit(emp.id, month);
+  const net = credit - debtMins;
+
+  if (net < 0) {
+    const abs = Math.abs(net);
+    const h = Math.floor(abs / 60);
+    const m = abs % 60;
+    const label = h > 0 ? `${h}س ${m}د` : `${m}د`;
+    showEmpAlert(`⏰ عليك تعويض ${label} هذا الشهر`, 'warn');
+  }
+}
+
+// تهيئة صفحة التعويض في لوحة المدير
+function initCompMonths() {
+  const sel = document.getElementById('comp-month');
+  if (!sel) return;
+  const now = new Date();
+  sel.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const val = d.toISOString().slice(0, 7);
+    const lbl = d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
+    const opt = document.createElement('option');
+    opt.value = val; opt.textContent = lbl;
+    sel.appendChild(opt);
+  }
+}
+
+function renderCompensation() {
+  const monthVal = (document.getElementById('comp-month') || {}).value;
+  if (!monthVal) return;
+  const emps = getEmps();
+  const container = document.getElementById('comp-results');
+  if (!emps.length) { container.innerHTML = '<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>'; return; }
+
+  const monthLabel = new Date(monthVal + '-01').toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
+  let html = '';
+
+  emps.forEach(emp => {
+    const { debtMins, details } = calcCompensationDebt(emp.id, monthVal);
+    const credit = calcCompensationCredit(emp.id, monthVal);
+    const net = credit - debtMins;
+    const netAbs = Math.abs(net);
+    const netH = Math.floor(netAbs / 60), netM = netAbs % 60;
+    const netLabel = netH > 0 ? `${netH}س ${netM}د` : `${netM}د`;
+    const netCls = net >= 0 ? 'tbank-pos' : 'tbank-neg';
+    const netIcon = net >= 0 ? '✅' : '⚠️';
+    const netText = net >= 0 ? `رصيد زائد ${netLabel}` : `عليه تعويض ${netLabel}`;
+
+    // بناء جدول التفاصيل مرتب من 1 إلى نهاية الشهر
+    const recs = getRecs()
+      .filter(r => r.empId === emp.id && r.date && r.date.startsWith(monthVal))
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    // تجميع التفاصيل حسب التاريخ
+    const detailsByDate = {};
+    details.forEach(d => {
+      if (!detailsByDate[d.date]) detailsByDate[d.date] = [];
+      detailsByDate[d.date].push(d);
+    });
+
+    // توليد كل أيام الشهر
+    const year = parseInt(monthVal.split('-')[0]);
+    const month = parseInt(monthVal.split('-')[1]);
+    const daysInMonth = new Date(year, month, 0).getDate();
+
+    let rows = '';
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dateStr = `${monthVal}-${String(day).padStart(2, '0')}`;
+      const rec = recs.find(r => r.date === dateStr);
+      const dayDetails = detailsByDate[dateStr] || [];
+      const d = new Date(dateStr + 'T12:00:00');
+      const days_ar = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+      const dayName = days_ar[d.getDay()];
+
+      if (!rec) {
+        // يوم بدون سجل
+        rows += `<tr style="opacity:0.4">
+          <td>${day}</td><td style="color:var(--muted)">${dayName}</td>
+          <td colspan="4" style="color:var(--muted);font-size:11px">—</td>
+        </tr>`;
+        continue;
+      }
+
+      const sched = getEmpSchedule(emp, dateStr);
+      const debtItems = dayDetails.filter(x => x.debt);
+      const allowedItems = dayDetails.filter(x => !x.debt);
+      const dayDebt = debtItems.reduce((s, x) => s + x.mins, 0);
+      const dH = Math.floor(dayDebt / 60), dM = dayDebt % 60;
+
+      let detailHtml = '';
+      dayDetails.forEach(x => {
+        const cls = x.debt ? 'tbank-neg' : 'tbank-pos';
+        const icon = x.debt ? '🔴' : '✅';
+        const mH = Math.floor(x.mins / 60), mM = x.mins % 60;
+        const mLabel = mH > 0 ? `${mH}س ${mM}د` : `${mM}د`;
+        detailHtml += `<span class="${cls}" style="font-size:11px;margin-left:6px">${icon} ${x.type} ${mLabel}</span>`;
+      });
+
+      const rowStyle = dayDebt > 0 ? 'row-late' : '';
+      rows += `<tr class="${rowStyle}">
+        <td style="font-weight:700">${day}</td>
+        <td style="color:var(--muted);font-size:11px">${dayName}</td>
+        <td>${rec.checkIn || '—'}</td>
+        <td>${rec.checkOut || '—'}</td>
+        <td style="font-size:11px">${detailHtml || '<span style="color:var(--green)">✅ منتظم</span>'}</td>
+        <td>${dayDebt > 0 ? `<span class="tbank-neg">${dH > 0 ? dH + 'س ' : ''}${dM}د</span>` : '<span class="tbank-pos">—</span>'}</td>
+      </tr>`;
+    }
+
+    html += `<div class="card">
+      <div class="ch" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <span>${esc(emp.emoji || '👤')} ${esc(emp.name)}</span>
+        <span class="${netCls}" style="font-size:14px">${netIcon} ${netText}</span>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div style="background:rgba(244,63,94,.08);border-radius:8px;padding:8px 14px;font-size:12px">
+          🔴 إجمالي الديون: <strong class="tbank-neg">${Math.floor(debtMins/60) > 0 ? Math.floor(debtMins/60)+'س ' : ''}${debtMins%60}د</strong>
+        </div>
+        <div style="background:rgba(16,185,129,.08);border-radius:8px;padding:8px 14px;font-size:12px">
+          ✅ إجمالي الرصيد: <strong class="tbank-pos">${Math.floor(credit/60) > 0 ? Math.floor(credit/60)+'س ' : ''}${credit%60}د</strong>
+        </div>
+      </div>
+      <div class="tw"><table>
+        <thead><tr>
+          <th>اليوم</th><th>الأسبوع</th><th>الحضور</th><th>الانصراف</th>
+          <th>التفاصيل</th><th>الدين</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
 }
 
 // Init mgr-login hidden
