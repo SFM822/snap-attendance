@@ -240,6 +240,26 @@ tr:hover td{background:rgba(255,255,255,.02)}
   border-radius:7px;padding:2px 7px;font-size:11px;font-weight:700}
 .warn-box{background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.2);
   border-radius:10px;padding:11px 13px;font-size:12px;color:var(--red);margin-bottom:12px;display:none}
+/* LATE LOGO — يومض بالأحمر عند التأخير */
+.shop-logo-img.late-day {
+  border-color: #f43f5e !important;
+  box-shadow: 0 0 28px rgba(244,63,94,0.8), 0 0 60px rgba(244,63,94,0.5) !important;
+  animation: float 3s ease-in-out infinite, latePulse 1.2s ease-in-out infinite !important;
+}
+@keyframes latePulse {
+  0%,100%{box-shadow:0 0 28px rgba(244,63,94,0.8),0 0 60px rgba(244,63,94,0.5)}
+  50%{box-shadow:0 0 50px rgba(244,63,94,1),0 0 90px rgba(244,63,94,0.7)}
+}
+/* تلوين صفوف التقرير */
+tr.row-late td { background: rgba(244,63,94,0.06) !important; }
+tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
+#mgr-dash tr.row-late td { background: rgba(244,63,94,0.08) !important; }
+#mgr-dash tr.row-violation td { background: rgba(244,63,94,0.15) !important; }
+
+/* time-bank */
+.tbank-pos{color:#10b981;font-weight:800}
+.tbank-neg{color:#f43f5e;font-weight:800}
+.tbank-zero{color:#64748b}
 </style>
 </head>
 <body>
@@ -274,7 +294,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <!-- KIOSK -->
 <div id="kiosk">
   <div class="kiosk-top">
-    <img class="shop-logo-img" src="data:image/jpeg;base64,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" alt="SNAP FILTER PHONES">
+    <img class="shop-logo-img" id="kiosk-logo" src="data:image/jpeg;base64,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" alt="SNAP FILTER PHONES">
     <div class="kiosk-title">SNAP FILTER PHONES</div>
     <div class="kiosk-sub">نظام الحضور والانصراف</div>
   </div>
@@ -392,6 +412,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <button class="mnav active" onclick="mTab('today',this)">📅 اليوم</button>
     <button class="mnav" onclick="mTab('records',this)">📋 السجلات</button>
     <button class="mnav" onclick="mTab('employees',this)">👥 الموظفون</button>
+    <button class="mnav" onclick="mTab('timebank',this)">⏱️ بنك الوقت</button>
     <button class="mnav" onclick="mTab('settings',this)">⚙️ الإعدادات</button>
   </nav>
   <main>
@@ -442,6 +463,22 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="btn-p" onclick="addEmp()">➕ إضافة</button>
       </div>
       <div class="card"><div class="ch">👥 قائمة الموظفين</div><div class="tw" id="emp-tbl"></div></div>
+    </div>
+
+
+    <!-- TIME BANK -->
+    <div class="mpage" id="mt-timebank">
+      <div class="card">
+        <div class="ch">⏱️ بنك الوقت الشهري</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <div class="fg" style="flex:1;min-width:140px">
+            <label class="flbl">اختر الشهر</label>
+            <select class="fsel" id="tb-month"></select>
+          </div>
+          <button class="btn-p" style="margin-bottom:10px" onclick="calcTimeBank()">عرض</button>
+        </div>
+      </div>
+      <div id="tb-results"></div>
     </div>
 
     <!-- SETTINGS -->
@@ -726,8 +763,8 @@ function cleanPin(s){
 // ═══════════════════════════════════════════════
 if(!getEmps().length){
   saveEmps([
-    {id:'emp1',name:'محمد زكريا',role:'موظف',pin:'1111',shiftStart:'09:30',shiftEnd:'12:00',breakMins:90,phone:'',emoji:'👨‍💼'},
-    {id:'emp2',name:'أحمد حلمي', role:'موظف',pin:'2222',shiftStart:'12:00',shiftEnd:'00:00',breakMins:90,phone:'',emoji:'👨‍🔧'},
+    {id:'emp1',name:'محمد زكريا',role:'موظف',pin:'1111',shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,phone:'',emoji:'👨‍💼'},
+    {id:'emp2',name:'أحمد حلمي', role:'موظف',pin:'2222',shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,phone:'',emoji:'👨‍🔧'},
   ]);
 }
 
@@ -895,9 +932,12 @@ function openActionScreen(){
   document.getElementById('action-screen').style.display='block';
   document.getElementById('act-name').textContent = esc(currentEmp.name);
   document.getElementById('act-role').textContent = esc(currentEmp.role);
-  const sEnd = currentEmp.shiftEnd==='00:00'?'منتصف الليل':currentEmp.shiftEnd;
-  document.getElementById('act-shift-badge').textContent =
-    `⏰ ${currentEmp.shiftStart} — ${sEnd}  |  استراحة ${currentEmp.breakMins||30} دقيقة`;
+  const _as=getEmpSchedule(currentEmp,todayStr());
+  const sEnd=_as.shiftEnd==='00:00'?'منتصف الليل':_as.shiftEnd;
+  let _bt=`⏰ ${_as.shiftStart} — ${sEnd}`;
+  if(_as.breakMins>0) _bt+=`  |  بريك ${_as.breakMins} دقيقة`;
+  _bt+=`  |  خروج مؤقت ${_as.tmpOutMins} دقيقة`;
+  document.getElementById('act-shift-badge').textContent=_bt;
   renderActState();
   resetAutoBack();
 }
@@ -946,17 +986,19 @@ function toMins(t){
   if(!t) return -1;
   const [h,m]=t.split(':').map(Number); return h*60+m;
 }
-function isLateIn(emp,checkIn){
-  const grace=15; // 15 min grace
-  const s=toMins(emp.shiftStart); const c=toMins(checkIn);
+function isLateIn(emp,checkIn,dateStr){
+  const sched=getEmpSchedule(emp,dateStr||todayStr());
+  const grace=15;
+  const s=toMins(sched.shiftStart); const c=toMins(checkIn);
   if(s<0||c<0) return false;
   return c > s+grace;
 }
-function isEarlyOut(emp,checkOut){
-  if(!checkOut||!emp.shiftEnd) return false;
-  if(emp.shiftEnd==='00:00') return false; // midnight shift — skip check
-  const s=toMins(emp.shiftEnd); const c=toMins(checkOut);
-  return c < s-5; // 5 min buffer
+function isEarlyOut(emp,checkOut,dateStr){
+  if(!checkOut) return false;
+  const sched=getEmpSchedule(emp,dateStr||todayStr());
+  if(sched.shiftEnd==='00:00') return false;
+  const s=toMins(sched.shiftEnd); const c=toMins(checkOut);
+  return c < s-5;
 }
 function calcWorked(rec){
   if(!rec||!rec.checkIn||!rec.checkOut) return null;
@@ -1054,17 +1096,19 @@ function doAction(type){
   // SECURITY: validate state machine
   if(type==='in'){
     if(rec){ showToast('⚠️ تم تسجيل حضورك مسبقاً','err'); resetAutoBack(); return; }
-    const late=isLateIn(currentEmp,time);
+    const _is=getEmpSchedule(currentEmp,today);
+    const late=isLateIn(currentEmp,time,today);
     const newRec={
       id:'r'+Date.now(),empId:currentEmp.id,empName:currentEmp.name,empRole:currentEmp.role,
       date:today,checkIn:time,checkOut:null,breakStart:null,breakEnd:null,
       status:late?'late':'present',note:'',
-      shiftStart:currentEmp.shiftStart,shiftEnd:currentEmp.shiftEnd,breakMins:currentEmp.breakMins||30
+      shiftStart:_is.shiftStart,shiftEnd:_is.shiftEnd,breakMins:_is.breakMins,tmpOutMins:_is.tmpOutMins
     };
     recs.push(newRec);
     if(late){
       showToast('⚠️ تم التسجيل — أنت متأخر','err');
-      showEmpAlert(`⚠️ أنت متأخر عن موعد الدوام! (${currentEmp.shiftStart})`,'warn');
+      showEmpAlert(`⚠️ أنت متأخر عن موعد الدوام! (${_is.shiftStart})`,'warn');
+      setTimeout(updateKioskLateStatus,300);
     } else {
       showToast('✅ تم تسجيل حضورك');
     }
@@ -1072,7 +1116,7 @@ function doAction(type){
     if(!rec||rec.checkOut){ showToast('⚠️ لم تسجّل حضوراً أو انصرفت مسبقاً','err'); resetAutoBack(); return; }
     if(rec.breakStart&&!rec.breakEnd){ showToast('⚠️ أنت في استراحة — سجّل الرجوع أولاً','err'); resetAutoBack(); return; }
     recs[idx].checkOut=time;
-    const earlyOut=isEarlyOut(currentEmp,time);
+    const earlyOut=isEarlyOut(currentEmp,time,today);
     recs[idx].earlyOut=earlyOut;
     if(earlyOut){
       showToast('⚠️ تم التسجيل — انصراف مبكر','err');
@@ -1081,6 +1125,8 @@ function doAction(type){
       showToast('🚪 تم تسجيل انصرافك');
     }
   } else if(type==='break'){
+    const _bk=getEmpSchedule(currentEmp,today);
+    if(!_bk.hasBreak){ showToast('⚠️ لا يوجد بريك في جدول دوامك اليوم','err'); resetAutoBack(); return; }
     if(!rec||!rec.checkIn||rec.checkOut||rec.breakStart){ showToast('⚠️ لا يمكن بدء الاستراحة الآن','err'); resetAutoBack(); return; }
     recs[idx].breakStart=time;
     showToast('☕ استمتع باستراحتك');
@@ -1094,16 +1140,18 @@ function doAction(type){
     if(rec.tmpOuts&&rec.tmpOuts.some(t=>t.out&&!t.in)){ showToast('⚠️ أنت في خروج مؤقت بالفعل','err'); resetAutoBack(); return; }
     if(!rec.tmpOuts) recs[idx].tmpOuts=[];
     recs[idx].tmpOuts.push({out:time,in:null});
-    showToast('🚶 سجّل رجوعك لما ترجع');
+    const _tq=getEmpSchedule(currentEmp,today);
+    showToast(`🚶 مسموح لك ${_tq.tmpOutMins} دقيقة`);
     setTimeout(()=>startTmpWarnTimer(recs[idx]),100);
   } else if(type==='tmpin'){
     if(!rec||!rec.tmpOuts||!rec.tmpOuts.some(t=>t.out&&!t.in)){ showToast('⚠️ لست في خروج مؤقت','err'); resetAutoBack(); return; }
     const ti=recs[idx].tmpOuts.findIndex(t=>t.out&&!t.in);
     recs[idx].tmpOuts[ti].in=time;
     const used=getTmpUsed(recs[idx]);
-    if(used>30){
+    const _tl=getEmpSchedule(currentEmp,today).tmpOutMins;
+    if(used>_tl){
       showToast(`⚠️ تجاوزت وقت الخروج! إجمالي: ${used} دقيقة`,'err');
-      showEmpAlert(`⚠️ تجاوزت وقت الخروج المؤقت! (${used} دقيقة من 30)`,'warn');
+      showEmpAlert(`⚠️ تجاوزت وقت الخروج المؤقت! (${used} دقيقة من ${_tl})`,'warn');
     } else {
       showToast(`🏃 أهلاً برجوعك — خروج مؤقت: ${used} دقيقة`);
     }
@@ -1176,6 +1224,7 @@ function openMgrDash(){
   renderEmpTable();
   populateEmpFilter();
   initReportMonths();
+  initTbMonths();
   checkMonthlyReminder();
   startFbSync();
   // Pull latest and init lastRecIds to avoid false alerts
@@ -1245,7 +1294,9 @@ function renderTodayStats(){
         <td><span class="badge ba">غائب</span></td>
         <td><button class="tb tbe" onclick="openAddRec('${esc(emp.id)}')">+ إضافة</button></td></tr>`;
     } else {
-      const late=isLateIn(emp,rec.checkIn), early=rec.earlyOut;
+      const late=isLateIn(emp,rec.checkIn,today), early=rec.earlyOut;
+      const _dv=isDayViolation(rec,emp);
+      const _rc2=_dv?'row-violation':late?'row-late':'';
       const worked=calcWorked(rec);
       const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
       let badge='';
@@ -1254,7 +1305,7 @@ function renderTodayStats(){
       else if(late) badge='<span class="badge bl">متأخر</span>';
       else badge='<span class="badge bp">حاضر</span>';
       const tmp=tmpOutSummary(rec);
-      rows+=`<tr>
+      rows+=`<tr class="${_rc2}">
         <td>${esc(emp.name)}</td>
         <td><span class="shift-tag">${esc(shift)}</span></td>
         <td class="${late?'red-val':''}">${esc(rec.checkIn)}</td>
@@ -1297,10 +1348,13 @@ function loadRecs(){
   let rows='<table><thead><tr><th>التاريخ</th><th>الموظف</th><th>الدوام</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>ساعات</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead><tbody>';
   recs.forEach(rec=>{
     const emp=emps.find(e=>e.id===rec.empId)||{};
-    const late=isLateIn(emp,rec.checkIn), early=rec.earlyOut;
+    const late=isLateIn(emp,rec.checkIn,rec.date), early=rec.earlyOut;
+    const _rv=isDayViolation(rec,emp);
+    const _rcr=_rv?'row-violation':late?'row-late':'';
     const worked=calcWorked(rec);
-    const sEnd=emp.shiftEnd==='00:00'?'منتصف الليل':emp.shiftEnd;
-    const shift=emp.shiftStart?`${emp.shiftStart}–${sEnd}`:'—';
+    const _rs2=getEmpSchedule(emp,rec.date);
+    const sEnd=_rs2.shiftEnd==='00:00'?'00:00':_rs2.shiftEnd;
+    const shift=emp.name?`${_rs2.shiftStart}–${sEnd}`:'—';
     const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
     let badge='';
     if(!rec.checkIn) badge='<span class="badge ba">غائب</span>';
@@ -1308,7 +1362,7 @@ function loadRecs(){
     else if(rec.breakStart&&!rec.breakEnd) badge='<span class="badge bbr">استراحة</span>';
     else if(late) badge='<span class="badge bl">متأخر</span>';
     else badge='<span class="badge bp">حاضر</span>';
-    rows+=`<tr>
+    rows+=`<tr class="${_rcr}">
       <td>${esc(rec.date)}</td>
       <td>${esc(rec.empName||emp.name||'—')}</td>
       <td><span class="shift-tag">${esc(shift)}</span></td>
@@ -1626,8 +1680,218 @@ document.querySelectorAll('.modal-bg').forEach(bg=>{
   bg.addEventListener('click',e=>{ if(e.target===bg) bg.style.display='none'; });
 });
 
+// ═══════════════════════════════════════════════
+//  جدول الدوام الديناميكي حسب الموظف واليوم
+// ═══════════════════════════════════════════════
+function isWeekend(dateStr){
+  const d=dateStr?new Date(dateStr+'T12:00:00'):new Date();
+  const day=d.getDay(); return day===0||day===6;
+}
+function getEmpSchedule(emp,dateStr){
+  const nm=(emp.name||'').trim();
+  const wknd=isWeekend(dateStr||todayStr());
+  if(nm.includes('محمد')){
+    if(wknd) return{shiftStart:'12:00',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
+    return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
+  }
+  if(nm.includes('أحمد')||nm.includes('احمد')){
+    if(wknd) return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
+    return{shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:40,hasBreak:false};
+  }
+  return{shiftStart:emp.shiftStart||'09:00',shiftEnd:emp.shiftEnd||'17:00',breakMins:emp.breakMins||30,tmpOutMins:30,hasBreak:true};
+}
+function updateKioskLateStatus(){
+  const today=todayStr();
+  const anyLate=getRecs().some(r=>r.date===today&&r.status==='late');
+  const logo=document.getElementById('kiosk-logo');
+  if(logo) logo.className='shop-logo-img'+(anyLate?' late-day':'');
+}
+function isDayViolation(rec,emp){
+  if(!rec||!rec.checkIn) return false;
+  const sched=getEmpSchedule(emp,rec.date);
+  const late=isLateIn(emp,rec.checkIn,rec.date);
+  const tmpOver=getTmpUsed(rec)>sched.tmpOutMins;
+  return (late&&(tmpOver||rec.earlyOut))||(tmpOver&&rec.earlyOut);
+}
+function getTmpLimit(rec){
+  if(!rec) return 30;
+  const emp=getEmps().find(e=>e.id===rec.empId)||{};
+  return getEmpSchedule(emp,rec.date).tmpOutMins||30;
+}
+
+// ═══════════════════════════════════════════════
+//  TIME BANK — بنك الوقت
+// ═══════════════════════════════════════════════
+function fmtMins(m){
+  const sign=m<0?'-':'+';
+  const abs=Math.abs(Math.round(m));
+  const h=Math.floor(abs/60), min=abs%60;
+  if(h===0) return sign+min+'د';
+  return sign+h+'س '+min+'د';
+}
+function fmtMinsCls(m){
+  if(m>0) return 'tbank-pos';
+  if(m<0) return 'tbank-neg';
+  return 'tbank-zero';
+}
+
+function calcDayBalance(rec, emp){
+  if(!rec||!rec.checkIn) return null;
+  const sched = getEmpSchedule(emp, rec.date);
+  let balance = 0;
+
+  // تأخير الحضور (سالب)
+  const sStart = toMins(sched.shiftStart);
+  const cIn    = toMins(rec.checkIn);
+  if(cIn > sStart) balance -= (cIn - sStart);
+  else             balance += (sStart - cIn); // حضور مبكر (موجب)
+
+  // انصراف مبكر أو متأخر
+  if(rec.checkOut && sched.shiftEnd !== '00:00'){
+    const sEnd = toMins(sched.shiftEnd);
+    const cOut = toMins(rec.checkOut);
+    let diff = cOut - sEnd;
+    if(diff < -720) diff += 24*60; // midnight crossing fix
+    if(diff >  720) diff -= 24*60;
+    balance += diff; // موجب = بقي إضافي، سالب = انصرف مبكر
+  }
+
+  // الاستراحة: الزيادة عن المسموح (سالب)، الأقل (موجب)
+  if(rec.breakStart && rec.breakEnd){
+    let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
+    if(bUsed < 0) bUsed += 24*60;
+    const diff = sched.breakMins - bUsed;
+    balance += diff; // breakMins - used: موجب=أخذ أقل، سالب=تجاوز
+  }
+
+  // الخروج المؤقت: الزيادة عن المسموح (سالب)، الأقل (موجب)
+  const tmpUsed = getTmpUsed(rec);
+  const tmpOver = tmpUsed - sched.tmpOutMins;
+  balance -= tmpOver; // سالب إذا تجاوز، موجب إذا أخذ أقل
+
+  return balance;
+}
+
+function initTbMonths(){
+  const sel=document.getElementById('tb-month'); if(!sel) return;
+  const now=new Date(); sel.innerHTML='';
+  for(let i=0;i<12;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const val=d.toISOString().slice(0,7);
+    const lbl=d.toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+    const opt=document.createElement('option');
+    opt.value=val; opt.textContent=lbl; sel.appendChild(opt);
+  }
+}
+
+function calcTimeBank(){
+  const monthVal=(document.getElementById('tb-month')||{}).value;
+  if(!monthVal) return;
+  const emps=getEmps(), recs=getRecs();
+  const monthRecs=recs.filter(r=>r.date&&r.date.startsWith(monthVal));
+  const monthLabel=new Date(monthVal+'-01').toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+  const container=document.getElementById('tb-results');
+
+  if(!emps.length){container.innerHTML='<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>';return;}
+
+  let html='';
+
+  emps.forEach(emp=>{
+    const empRecs=monthRecs.filter(r=>r.empId===emp.id).sort((a,b)=>a.date.localeCompare(b.date));
+    let totalBal=0;
+    let rows='';
+
+    empRecs.forEach(rec=>{
+      const sched=getEmpSchedule(emp,rec.date);
+      const dayBal=calcDayBalance(rec,emp);
+      if(dayBal===null) return;
+      totalBal+=dayBal;
+
+      // تفاصيل المكونات
+      const sStart=toMins(sched.shiftStart);
+      const cIn=toMins(rec.checkIn);
+      const lateMin=cIn>sStart?-(cIn-sStart):0;
+      const earlyArrMin=cIn<sStart?(sStart-cIn):0;
+
+      let earlyLeaveMin=0;
+      if(rec.checkOut&&sched.shiftEnd!=='00:00'){
+        const sEnd=toMins(sched.shiftEnd);
+        const cOut=toMins(rec.checkOut);
+        let diff=cOut-sEnd;
+        if(diff<-720) diff+=24*60;
+        if(diff>720) diff-=24*60;
+        if(diff<0) earlyLeaveMin=diff;
+      }
+
+      let breakDiff=0;
+      if(rec.breakStart&&rec.breakEnd){
+        let bUsed=toMins(rec.breakEnd)-toMins(rec.breakStart);
+        if(bUsed<0) bUsed+=24*60;
+        breakDiff=sched.breakMins-bUsed;
+      }
+
+      const tmpUsed=getTmpUsed(rec);
+      const tmpDiff=-(tmpUsed-sched.tmpOutMins);
+
+      const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short'});
+      const balCls=fmtMinsCls(dayBal);
+      const late=isLateIn(emp,rec.checkIn,rec.date);
+      const violation=isDayViolation(rec,emp);
+
+      let details=[];
+      if(lateMin<0)      details.push(`<span class="tbank-neg">تأخير ${Math.abs(lateMin)}د</span>`);
+      if(earlyArrMin>0)  details.push(`<span class="tbank-pos">حضور مبكر ${earlyArrMin}د</span>`);
+      if(earlyLeaveMin<0)details.push(`<span class="tbank-neg">انصراف مبكر ${Math.abs(earlyLeaveMin)}د</span>`);
+      if(breakDiff!==0)  details.push(`<span class="${breakDiff>0?'tbank-pos':'tbank-neg'}">${breakDiff>0?'استراحة أقصر':'تجاوز استراحة'} ${Math.abs(breakDiff)}د</span>`);
+      if(tmpDiff!==0)    details.push(`<span class="${tmpDiff>0?'tbank-pos':'tbank-neg'}">${tmpDiff>0?'خروج مؤقت أقل':'تجاوز خروج مؤقت'} ${Math.abs(tmpDiff)}د</span>`);
+
+      rows+=`<tr class="${violation?'row-violation':late?'row-late':''}">
+        <td>${esc(dateLabel)}</td>
+        <td>${esc(rec.checkIn||'—')}</td>
+        <td>${rec.checkOut?esc(rec.checkOut):'—'}</td>
+        <td style="font-size:11px">${details.join(' | ')||'—'}</td>
+        <td><span class="${balCls}">${fmtMins(dayBal)}</span></td>
+      </tr>`;
+    });
+
+    const totCls=fmtMinsCls(totalBal);
+    const totLabel=totalBal>=0
+      ?`<span class="tbank-pos">✅ رصيد زائد ${fmtMins(totalBal)}</span>`
+      :`<span class="tbank-neg">⚠️ عجز ${fmtMins(totalBal)}</span>`;
+
+    html+=`<div class="card">
+      <div class="ch" style="justify-content:space-between">
+        <span>${esc(emp.emoji||'👤')} ${esc(emp.name)}</span>
+        <span style="font-size:13px">${totLabel}</span>
+      </div>`;
+
+    if(!empRecs.length){
+      html+='<div class="empty" style="padding:12px">لا توجد سجلات هذا الشهر</div>';
+    } else {
+      html+=`<div class="tw"><table>
+        <thead><tr>
+          <th>التاريخ</th><th>الحضور</th><th>الانصراف</th>
+          <th>التفاصيل</th><th>الرصيد</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table></div>
+      <div style="margin-top:10px;padding:10px;background:rgba(79,142,247,.06);border-radius:8px;font-size:13px;font-weight:700">
+        الرصيد الإجمالي للشهر:
+        <span class="${totCls}" style="font-size:16px;margin-right:8px">${fmtMins(totalBal)}</span>
+        ${totalBal>=0
+          ?'<span style="color:var(--green);font-size:12px">يمكن تعويض الغيابات أو التأخير القادم</span>'
+          :'<span style="color:var(--red);font-size:12px">يحتاج تعويض الوقت الناقص</span>'}
+      </div>`;
+    }
+    html+='</div>';
+  });
+
+  container.innerHTML=html;
+}
+
 // Init mgr-login hidden
 document.getElementById('mgr-login').style.display='none';
+setTimeout(updateKioskLateStatus,800);
 </script>
 </body>
 </html>
