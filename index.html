@@ -282,6 +282,19 @@ tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
   </div>
 </div>
 
+
+<!-- KIOSK LOCK OVERLAY — يظهر عند دخول المدير من جهاز آخر -->
+<div id="kiosk-lock" style="display:none;position:fixed;inset:0;z-index:600;
+  background:var(--bg);flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <img src="" id="lock-logo" style="width:130px;height:130px;border-radius:50%;object-fit:cover;
+    border:3px solid var(--gold);box-shadow:0 0 40px #c9a22750;animation:float 3s ease-in-out infinite">
+  <div style="font-size:22px;font-weight:900;color:var(--gold)">SNAP FILTER PHONES</div>
+  <div style="font-size:13px;color:var(--muted)">نظام الحضور والانصراف</div>
+  <div style="font-size:46px;font-weight:900;color:var(--accent);letter-spacing:3px;
+    font-variant-numeric:tabular-nums" id="lock-clock">00:00:00</div>
+  <div style="font-size:13px;color:var(--muted)" id="lock-date"></div>
+</div>
+
 <!-- COOLDOWN OVERLAY -->
 <div id="cooldown-overlay">
   <div class="ico">🔒</div>
@@ -938,12 +951,40 @@ function pinEnter(){
 document.addEventListener('keydown',e=>{
   const kiosk=document.getElementById('kiosk');
   const mgrLogin=document.getElementById('mgr-login');
+  // كيوسك PIN
   if(kiosk.style.display!=='none' && mgrLogin.style.display==='none'){
     if(e.key>='0'&&e.key<='9') pinKey(e.key);
     else if(e.key==='Backspace') pinDel();
     else if(e.key==='Enter') pinEnter();
   }
+  // رمز المدير بالكيبورد — مع النافذة مفتوحة
+  if(mgrLogin.style.display==='flex'){
+    if(e.key>='0'&&e.key<='9'){ e.preventDefault(); mgrKey(e.key); }
+    else if(e.key==='Backspace'){ e.preventDefault(); mgrDel(); }
+    else if(e.key==='Enter'){ e.preventDefault(); mgrEnter(); }
+    else if(e.key==='Escape'){ e.preventDefault(); closeMgrLogin(); }
+  }
+  // دخول المدير الصامت — من الكيوسك مباشرة بدون فتح النافذة
+  if(kiosk.style.display!=='none' && mgrLogin.style.display!=='flex'){
+    if(e.key>='0'&&e.key<='9'){
+      silentMgrBuf = (silentMgrBuf||'') + e.key;
+      clearTimeout(silentMgrTimer);
+      // لو اكتمل الرمز
+      if(silentMgrBuf.length >= getMgrPin().length){
+        const entered = silentMgrBuf;
+        silentMgrBuf = '';
+        if(cleanPin(entered)===cleanPin(getMgrPin())){
+          clearFails(K.MGR_ATT);
+          openMgrDash();
+        }
+      } else {
+        // مسح البفر لو توقف الكتابة أكثر من 3 ثواني
+        silentMgrTimer = setTimeout(()=>{ silentMgrBuf=''; }, 3000);
+      }
+    }
+  }
 });
+let silentMgrBuf='', silentMgrTimer=null;
 
 // ═══════════════════════════════════════════════
 //  ACTION SCREEN
@@ -1241,6 +1282,7 @@ function mgrEnter(){
 function openMgrDash(){
   document.getElementById('kiosk').style.display='none';
   document.getElementById('mgr-dash').style.display='block';
+  setManagerActive(true); // أعلم جهاز المحل أن المدير دخل
   mTab('today', document.querySelector('.mnav'));
   renderTodayStats();
   renderEmpTable();
@@ -2229,6 +2271,92 @@ function renderCompensation() {
 
   container.innerHTML = html;
 }
+
+
+// ═══════════════════════════════════════════════
+//  قفل الكيوسك عند دخول المدير من جهاز آخر
+// ═══════════════════════════════════════════════
+let kioskLockTimer = null;
+let isKioskLocked = false;
+
+// نسخ شعار المحل للشاشة المقفلة
+function syncLockLogo(){
+  const src = document.getElementById('kiosk-logo');
+  const dst = document.getElementById('lock-logo');
+  if(src && dst) dst.src = src.src;
+}
+
+// تحديث ساعة شاشة القفل
+function tickLockScreen(){
+  const n = new Date();
+  const t = String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0')+':'+String(n.getSeconds()).padStart(2,'0');
+  const cl = document.getElementById('lock-clock');
+  if(cl) cl.textContent = t;
+  const dl = document.getElementById('lock-date');
+  if(dl){
+    const day = n.toLocaleDateString('ar-SA',{weekday:'long'});
+    const mil = n.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});
+    dl.textContent = day + ' — ' + mil;
+  }
+}
+setInterval(tickLockScreen, 1000);
+
+// رفع حالة المدير على Firebase
+async function setManagerActive(active){
+  try{
+    await fetch(FB_URL+'/managerActive.json',{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(active)
+    });
+  }catch(e){}
+}
+
+// قفل شاشة الكيوسك
+function lockKioskScreen(){
+  if(isKioskLocked) return;
+  isKioskLocked = true;
+  syncLockLogo();
+  const lock = document.getElementById('kiosk-lock');
+  const kiosk = document.getElementById('kiosk');
+  const action = document.getElementById('action-screen');
+  if(lock){
+    lock.style.display = 'flex';
+  }
+}
+
+// فتح شاشة الكيوسك
+function unlockKioskScreen(){
+  if(!isKioskLocked) return;
+  isKioskLocked = false;
+  const lock = document.getElementById('kiosk-lock');
+  if(lock) lock.style.display = 'none';
+}
+
+// مراقبة حالة المدير من Firebase
+async function checkManagerActive(){
+  // لا تراقب إذا لوحة المدير مفتوحة على هذا الجهاز
+  const mgrDash = document.getElementById('mgr-dash');
+  if(mgrDash && mgrDash.style.display !== 'none') return;
+  // لا تراقب إذا شاشة الإجراء مفتوحة
+  const actionScreen = document.getElementById('action-screen');
+  if(actionScreen && actionScreen.style.display !== 'none') return;
+
+  try{
+    const res = await fetch(FB_URL+'/managerActive.json');
+    if(res.ok){
+      const val = await res.json();
+      if(val === true){
+        lockKioskScreen();
+      } else {
+        unlockKioskScreen();
+      }
+    }
+  }catch(e){}
+}
+
+// مراقبة كل 5 ثواني
+setInterval(checkManagerActive, 5000);
 
 // Init mgr-login hidden
 document.getElementById('mgr-login').style.display='none';
