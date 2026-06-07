@@ -1592,7 +1592,8 @@ function initReportMonths(){
   for(let i=0;i<12;i++){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     const val=d.toISOString().slice(0,7);
-    const lbl=d.toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+    const months_mil=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const lbl=months_mil[d.getMonth()]+' '+d.getFullYear();
     const opt=document.createElement('option');
     opt.value=val; opt.textContent=lbl;
     sel.appendChild(opt);
@@ -1604,7 +1605,9 @@ function sendMonthlyReport(){
   if(!monthVal) return;
   const emps=getEmps(), recs=getRecs();
   const monthRecs=recs.filter(r=>r.date&&r.date.startsWith(monthVal));
-  const monthLabel=new Date(monthVal+'-01').toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+  const _md=new Date(monthVal+'-01');
+  const _mnames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const monthLabel=_mnames[_md.getMonth()]+' '+_md.getFullYear();
 
   if(!monthRecs.length){
     showToast('⚠️ لا توجد سجلات لهذا الشهر','err'); return;
@@ -1806,7 +1809,8 @@ function initTbMonths(){
   for(let i=0;i<12;i++){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     const val=d.toISOString().slice(0,7);
-    const lbl=d.toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+    const months_mil=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+    const lbl=months_mil[d.getMonth()]+' '+d.getFullYear();
     const opt=document.createElement('option');
     opt.value=val; opt.textContent=lbl; sel.appendChild(opt);
   }
@@ -1817,7 +1821,9 @@ function calcTimeBank(){
   if(!monthVal) return;
   const emps=getEmps(), recs=getRecs();
   const monthRecs=recs.filter(r=>r.date&&r.date.startsWith(monthVal));
-  const monthLabel=new Date(monthVal+'-01').toLocaleDateString('ar-SA',{year:'numeric',month:'long'});
+  const _md=new Date(monthVal+'-01');
+  const _mnames=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const monthLabel=_mnames[_md.getMonth()]+' '+_md.getFullYear();
   const container=document.getElementById('tb-results');
 
   if(!emps.length){container.innerHTML='<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>';return;}
