@@ -1451,6 +1451,7 @@ function renderTodayStats(){
       else _rc2='';
       const worked=calcWorked(rec);
       const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
+    const tmp=tmpOutSummary(rec);
       let badge='';
       if(rec.checkOut) badge=`<span class="badge ${early?'bl':'bp'}">${early?'انصراف مبكر':'انصرف'}</span>`;
       else if(rec.breakStart&&!rec.breakEnd) badge='<span class="badge bbr">في استراحة</span>';
