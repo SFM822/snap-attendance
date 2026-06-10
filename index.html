@@ -1452,7 +1452,7 @@ function renderTodayStats(){
       const worked=calcWorked(rec);
       const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
     const tmp=tmpOutSummary(rec);
-      let badge='';
+    let badge='';
       if(rec.checkOut) badge=`<span class="badge ${early?'bl':'bp'}">${early?'انصراف مبكر':'انصرف'}</span>`;
       else if(rec.breakStart&&!rec.breakEnd) badge='<span class="badge bbr">في استراحة</span>';
       else if(late) badge='<span class="badge bl">متأخر</span>';
@@ -1529,6 +1529,7 @@ function loadRecs(){
     const sEnd=_rs2.shiftEnd==='00:00'?'00:00':_rs2.shiftEnd;
     const shift=emp.name?`${_rs2.shiftStart}–${sEnd}`:'—';
     const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
+    const tmp=tmpOutSummary(rec);
     let badge='';
     if(!rec.checkIn) badge='<span class="badge ba">غائب</span>';
     else if(rec.checkOut) badge=`<span class="badge ${early?'bl':'bp'}">${early?'مبكر':'انصرف'}</span>`;
