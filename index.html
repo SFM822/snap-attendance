@@ -260,6 +260,28 @@ tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
 .tbank-pos{color:#10b981;font-weight:800}
 .tbank-neg{color:#f43f5e;font-weight:800}
 .tbank-zero{color:#64748b}
+
+/* أزرار نوع التعديل */
+.edit-type-btn{
+  padding:7px 11px;border:1px solid var(--border);border-radius:8px;
+  background:var(--s2);color:var(--muted);font-family:'Cairo',sans-serif;
+  font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.edit-type-btn:hover{border-color:var(--accent);color:var(--accent)}
+.edit-type-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+
+/* ألوان صفوف السجلات */
+tr.row-ok td { background: rgba(16,185,129,0.06) !important; }
+tr.row-ok:hover td { background: rgba(16,185,129,0.10) !important; }
+tr.row-debt td { background: rgba(244,63,94,0.06) !important; }
+tr.row-debt:hover td { background: rgba(244,63,94,0.10) !important; }
+tr.row-credit td { background: rgba(16,185,129,0.10) !important; }
+tr.row-credit:hover td { background: rgba(16,185,129,0.15) !important; }
+#mgr-dash tr.row-ok td { background: rgba(16,185,129,0.06) !important; }
+#mgr-dash tr.row-debt td { background: rgba(244,63,94,0.06) !important; }
+#mgr-dash tr.row-credit td { background: rgba(16,185,129,0.10) !important; }
+
 </style>
 </head>
 <body>
@@ -561,24 +583,61 @@ tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
 
 <!-- EDIT MODAL -->
 <div class="modal-bg" id="edit-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:440px">
     <h3>✏️ تعديل السجل</h3>
     <input type="hidden" id="edit-id">
-    <div class="frow">
-      <div class="fg"><label class="flbl">وقت الحضور</label><input class="finp" id="ei" type="time"></div>
-      <div class="fg"><label class="flbl">وقت الانصراف</label><input class="finp" id="eo" type="time"></div>
-      <div class="fg"><label class="flbl">بداية الاستراحة</label><input class="finp" id="eb" type="time"></div>
-      <div class="fg"><label class="flbl">نهاية الاستراحة</label><input class="finp" id="ebk" type="time"></div>
+
+    <!-- أزرار نوع التعديل -->
+    <div style="display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap">
+      <button class="edit-type-btn active" onclick="switchEditType('checkin')" id="et-checkin">
+        ✅ الحضور والانصراف
+      </button>
+      <button class="edit-type-btn" onclick="switchEditType('break')" id="et-break">
+        ☕ الاستراحة
+      </button>
+      <button class="edit-type-btn" onclick="switchEditType('tmpout')" id="et-tmpout">
+        🚶 الخروج المؤقت
+      </button>
+      <button class="edit-type-btn" onclick="switchEditType('status')" id="et-status">
+        📋 الحالة والملاحظة
+      </button>
     </div>
-    <div class="fg"><label class="flbl">الحالة</label>
-      <select class="fsel" id="es">
-        <option value="present">حاضر</option>
-        <option value="late">متأخر</option>
-        <option value="absent">غائب</option>
-      </select>
+
+    <!-- قسم الحضور والانصراف -->
+    <div id="edit-section-checkin">
+      <div class="frow">
+        <div class="fg"><label class="flbl">وقت الحضور</label><input class="finp" id="ei" type="time"></div>
+        <div class="fg"><label class="flbl">وقت الانصراف</label><input class="finp" id="eo" type="time"></div>
+      </div>
     </div>
-    <div class="fg"><label class="flbl">ملاحظة</label><input class="finp" id="en" placeholder="اختياري"></div>
-    <div class="m-actions">
+
+    <!-- قسم الاستراحة -->
+    <div id="edit-section-break" style="display:none">
+      <div class="frow">
+        <div class="fg"><label class="flbl">بداية الاستراحة</label><input class="finp" id="eb" type="time"></div>
+        <div class="fg"><label class="flbl">نهاية الاستراحة</label><input class="finp" id="ebk" type="time"></div>
+      </div>
+    </div>
+
+    <!-- قسم الخروج المؤقت -->
+    <div id="edit-section-tmpout" style="display:none">
+      <div id="tmpout-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
+      <button class="btn-p" style="font-size:12px;padding:7px 14px" onclick="addTmpOutRow()">+ إضافة خروج مؤقت</button>
+    </div>
+
+    <!-- قسم الحالة والملاحظة -->
+    <div id="edit-section-status" style="display:none">
+      <div class="fg"><label class="flbl">الحالة</label>
+        <select class="fsel" id="es">
+          <option value="present">حاضر</option>
+          <option value="late">متأخر</option>
+          <option value="absent">غائب</option>
+        </select>
+      </div>
+      <div class="fg"><label class="flbl">ملاحظة</label><input class="finp" id="en" placeholder="اختياري"></div>
+    </div>
+
+    <div class="m-actions" style="margin-top:14px">
       <button class="btn-cancel" onclick="closeModal('edit-modal')">إلغاء</button>
       <button class="btn-save" onclick="saveEdit()">💾 حفظ</button>
     </div>
@@ -594,10 +653,29 @@ tr.row-violation td { background: rgba(244,63,94,0.18) !important; }
       <div class="fg"><label class="flbl">الاسم الكامل *</label><input class="finp" id="ee-n" placeholder="اسم الموظف"></div>
       <div class="fg"><label class="flbl">المنصب</label><input class="finp" id="ee-r" placeholder="بائع، محاسب..."></div>
       <div class="fg"><label class="flbl">PIN الجديد (4 أرقام)</label><input class="finp" id="ee-p" type="text" inputmode="numeric" maxlength="4" placeholder="اتركه فارغاً للإبقاء على القديم" dir="ltr"></div>
-      <div class="fg"><label class="flbl">بداية الدوام</label><input class="finp" id="ee-ss" type="time"></div>
-      <div class="fg"><label class="flbl">نهاية الدوام</label><input class="finp" id="ee-se" type="time"></div>
-      <div class="fg"><label class="flbl">مدة الاستراحة (دقيقة)</label><input class="finp" id="ee-brk" type="number" min="0" max="180"></div>
       <div class="fg"><label class="flbl">رقم الهاتف</label><input class="finp" id="ee-ph" type="tel" placeholder="05xxxxxxxx"></div>
+    </div>
+    <div style="background:rgba(79,142,247,.06);border-radius:10px;padding:12px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:700;color:var(--accent);margin-bottom:10px">⚙️ إعدادات مخصصة لكل يوم</div>
+      <div class="frow" style="grid-template-columns:repeat(3,1fr)">
+        <div class="fg"><label class="flbl">يوم الإجازة</label>
+          <select class="fsel" id="ee-off">
+            <option value="">— بدون —</option>
+            <option value="1">الاثنين</option>
+            <option value="2">الثلاثاء</option>
+            <option value="3">الأربعاء</option>
+            <option value="4">الخميس</option>
+            <option value="5">الجمعة</option>
+            <option value="6">السبت</option>
+            <option value="0">الأحد</option>
+          </select>
+        </div>
+        <div class="fg"><label class="flbl">خروج مؤقت أسبوع (د)</label><input class="finp" id="ee-tmp-wk" type="number" min="0" max="120" placeholder="40"></div>
+        <div class="fg"><label class="flbl">خروج مؤقت وكند (د)</label><input class="finp" id="ee-tmp-wknd" type="number" min="0" max="120" placeholder="30"></div>
+        <div class="fg"><label class="flbl">بريك أسبوع (د)</label><input class="finp" id="ee-brk-wk" type="number" min="0" max="180" placeholder="0"></div>
+        <div class="fg"><label class="flbl">بريك وكند (د)</label><input class="finp" id="ee-brk-wknd" type="number" min="0" max="180" placeholder="120"></div>
+        <div class="fg"><label class="flbl">بريك الجمعة/الأحد (د)</label><input class="finp" id="ee-brk-special" type="number" min="0" max="180" placeholder="0"></div>
+      </div>
     </div>
     <div id="ee-warn" class="warn-box"></div>
     <div class="m-actions">
@@ -1348,7 +1426,7 @@ function renderTodayStats(){
   // Table
   const tbl=document.getElementById('today-tbl');
   if(!emps.length){ tbl.innerHTML='<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>'; return; }
-  let rows='<table><thead><tr><th>الموظف</th><th>الدوام</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>ساعات العمل</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>';
+  let rows='<table><thead><tr><th>اليوم</th><th>الموظف</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>التعويض</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>';
   emps.forEach(emp=>{
     const rec=todayRecs.find(r=>r.empId===emp.id);
     const sEnd=emp.shiftEnd==='00:00'?'منتصف الليل':emp.shiftEnd;
@@ -1361,7 +1439,14 @@ function renderTodayStats(){
     } else {
       const late=isLateIn(emp,rec.checkIn,today), early=rec.earlyOut;
       const _dv=isDayViolation(rec,emp);
-      const _rc2=_dv?'row-violation':late?'row-late':'';
+      const _dd2=calcDayDebt(rec,emp), _dc2=calcDayCredit(rec,emp), _dn2=_dc2-_dd2;
+      const _tdays=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+      const _tdname = rec.date ? _tdays[new Date(rec.date+'T12:00:00').getDay()] : new Date().toLocaleDateString('ar-SA',{weekday:'long'});
+      let _rc2;
+      if(_dv||(_dd2>0&&_dc2<=0)) _rc2='row-debt';
+      else if(_dn2>0) _rc2='row-credit';
+      else if(rec.checkIn&&_dd2===0) _rc2='row-ok';
+      else _rc2='';
       const worked=calcWorked(rec);
       const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
       let badge='';
@@ -1370,14 +1455,16 @@ function renderTodayStats(){
       else if(late) badge='<span class="badge bl">متأخر</span>';
       else badge='<span class="badge bp">حاضر</span>';
       const tmp=tmpOutSummary(rec);
+      const _dd=calcDayDebt(rec,emp),_dc=calcDayCredit(rec,emp),_dn=_dc-_dd;
+      const _dch=buildCompHtml(_dn,_dd,_dc);
       rows+=`<tr class="${_rc2}">
+        <td style="font-weight:700;color:var(--accent)">${_tdname}</td>
         <td>${esc(emp.name)}</td>
-        <td><span class="shift-tag">${esc(shift)}</span></td>
         <td class="${late?'red-val':''}">${esc(rec.checkIn)}</td>
         <td class="${early?'red-val':''}">${rec.checkOut?esc(rec.checkOut):'—'}</td>
         <td>${esc(brk)}</td>
         <td>${tmp.html}</td>
-        <td>${worked||'—'}</td>
+        <td>${_dch}</td>
         <td>${badge}</td>
         <td class="tbs">
           <button class="tb tbe" onclick="openEdit('${esc(rec.id)}')">✏️</button>
@@ -1410,12 +1497,19 @@ function loadRecs(){
   const tbl=document.getElementById('recs-tbl');
   if(!recs.length){ tbl.innerHTML='<div class="empty"><div class="ei">📊</div>لا توجد سجلات</div>'; return; }
   const emps=getEmps();
-  let rows='<table><thead><tr><th>التاريخ</th><th>الموظف</th><th>الدوام</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>ساعات</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead><tbody>';
+  let rows='<table><thead><tr><th>اليوم</th><th>التاريخ</th><th>الموظف</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>التعويض</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead><tbody>';
   recs.forEach(rec=>{
     const emp=emps.find(e=>e.id===rec.empId)||{};
     const late=isLateIn(emp,rec.checkIn,rec.date), early=rec.earlyOut;
     const _rv=isDayViolation(rec,emp);
-    const _rcr=_rv?'row-violation':late?'row-late':'';
+    const _rd2=calcDayDebt(rec,emp), _rc3=calcDayCredit(rec,emp), _rn2=_rc3-_rd2;
+    const _days=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+    const _dname = rec.date ? _days[new Date(rec.date+'T12:00:00').getDay()] : '—';
+    let _rcr;
+    if(_rv||(_rd2>0&&_rc3<=0)) _rcr='row-debt';
+    else if(_rn2>0) _rcr='row-credit';
+    else if(rec.checkIn&&_rd2===0) _rcr='row-ok';
+    else _rcr='';
     const worked=calcWorked(rec);
     const _rs2=getEmpSchedule(emp,rec.date);
     const sEnd=_rs2.shiftEnd==='00:00'?'00:00':_rs2.shiftEnd;
@@ -1427,14 +1521,18 @@ function loadRecs(){
     else if(rec.breakStart&&!rec.breakEnd) badge='<span class="badge bbr">استراحة</span>';
     else if(late) badge='<span class="badge bl">متأخر</span>';
     else badge='<span class="badge bp">حاضر</span>';
+    // حساب التعويض
+    const _rd=calcDayDebt(rec,emp), _rc2=calcDayCredit(rec,emp), _rn=_rc2-_rd;
+    const _rch=buildCompHtml(_rn,_rd,_rc2);
     rows+=`<tr class="${_rcr}">
+      <td style="font-weight:700;color:var(--accent)">${_dname}</td>
       <td>${esc(rec.date)}</td>
       <td>${esc(rec.empName||emp.name||'—')}</td>
-      <td><span class="shift-tag">${esc(shift)}</span></td>
       <td class="${late?'red-val':''}">${rec.checkIn?esc(rec.checkIn):'—'}</td>
       <td class="${early?'red-val':''}">${rec.checkOut?esc(rec.checkOut):'—'}</td>
       <td>${esc(brk)}</td>
-      <td>${worked||'—'}</td>
+      <td>${tmp.html}</td>
+      <td>${_rch}</td>
       <td>${badge}</td>
       <td>${esc(rec.note||'')}</td>
       <td class="tbs">
@@ -1458,6 +1556,8 @@ function openEdit(id){
   document.getElementById('ebk').value=rec.breakEnd||'';
   document.getElementById('es').value=rec.status||'present';
   document.getElementById('en').value=rec.note||'';
+  loadTmpOutRows(rec.tmpOuts||[]);
+  switchEditType('checkin'); // ابدأ بقسم الحضور دائماً
   document.getElementById('edit-modal').style.display='flex';
 }
 function saveEdit(){
@@ -1478,6 +1578,9 @@ function saveEdit(){
   recs[idx].breakEnd=cbk||null;
   recs[idx].status=document.getElementById('es').value;
   recs[idx].note=cleanStr(document.getElementById('en').value,100);
+  // حفظ الخروج المؤقت من الصفوف
+  const _newTmp=getTmpOutRows();
+  recs[idx].tmpOuts=_newTmp.length>0?_newTmp:[];
   // recalculate earlyOut
   const emp=getEmps().find(e=>e.id===recs[idx].empId)||{};
   recs[idx].earlyOut=isEarlyOut(emp,co);
@@ -1571,10 +1674,15 @@ function openEmpEdit(id){
   document.getElementById('ee-n').value=emp.name||'';
   document.getElementById('ee-r').value=emp.role||'';
   document.getElementById('ee-p').value='';
-  document.getElementById('ee-ss').value=emp.shiftStart||'09:00';
-  document.getElementById('ee-se').value=emp.shiftEnd||'17:00';
-  document.getElementById('ee-brk').value=emp.breakMins||30;
   document.getElementById('ee-ph').value=emp.phone||'';
+  // إعدادات مخصصة
+  const cfg=emp.customSchedule||{};
+  document.getElementById('ee-off').value=cfg.offDay!==undefined?String(cfg.offDay):'';
+  document.getElementById('ee-tmp-wk').value=cfg.tmpOutWk!==undefined?cfg.tmpOutWk:'';
+  document.getElementById('ee-tmp-wknd').value=cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:'';
+  document.getElementById('ee-brk-wk').value=cfg.brkWk!==undefined?cfg.brkWk:'';
+  document.getElementById('ee-brk-wknd').value=cfg.brkWknd!==undefined?cfg.brkWknd:'';
+  document.getElementById('ee-brk-special').value=cfg.brkSpecial!==undefined?cfg.brkSpecial:'';
   document.getElementById('ee-warn').style.display='none';
   document.getElementById('edit-emp-modal').style.display='flex';
 }
@@ -1586,9 +1694,6 @@ function saveEmpEdit(){
   const name=cleanStr(document.getElementById('ee-n').value||'',40);
   const role=cleanStr(document.getElementById('ee-r').value||'',30);
   const pinRaw=document.getElementById('ee-p').value.trim();
-  const ss=document.getElementById('ee-ss').value||'09:00';
-  const se=document.getElementById('ee-se').value||'17:00';
-  const brk=parseInt(document.getElementById('ee-brk').value)||30;
   const phone=cleanStr(document.getElementById('ee-ph').value||'',15);
 
   if(!name){ warn.textContent='⚠️ اكتب اسم الموظف'; warn.style.display='block'; return; }
@@ -1606,10 +1711,22 @@ function saveEmpEdit(){
 
   emps[idx].name=name;
   emps[idx].role=role;
-  emps[idx].shiftStart=ss;
-  emps[idx].shiftEnd=se;
-  emps[idx].breakMins=brk;
   emps[idx].phone=phone;
+  // حفظ الإعدادات المخصصة
+  const _offDay=document.getElementById('ee-off').value;
+  const _tmpWk=document.getElementById('ee-tmp-wk').value;
+  const _tmpWknd=document.getElementById('ee-tmp-wknd').value;
+  const _brkWk=document.getElementById('ee-brk-wk').value;
+  const _brkWknd=document.getElementById('ee-brk-wknd').value;
+  const _brkSp=document.getElementById('ee-brk-special').value;
+  emps[idx].customSchedule={
+    offDay:_offDay!==''?parseInt(_offDay):undefined,
+    tmpOutWk:_tmpWk!==''?parseInt(_tmpWk):undefined,
+    tmpOutWknd:_tmpWknd!==''?parseInt(_tmpWknd):undefined,
+    brkWk:_brkWk!==''?parseInt(_brkWk):undefined,
+    brkWknd:_brkWknd!==''?parseInt(_brkWknd):undefined,
+    brkSpecial:_brkSp!==''?parseInt(_brkSp):undefined,
+  };
 
   if(!saveEmps(emps)){ warn.textContent='⚠️ تعذّر الحفظ'; warn.style.display='block'; return; }
   closeModal('edit-emp-modal');
@@ -1758,20 +1875,39 @@ function isWeekend(dateStr){
 function getEmpSchedule(emp,dateStr){
   const nm=(emp.name||'').trim();
   const wknd=isWeekend(dateStr||todayStr());
+  const _dow = dateStr ? new Date(dateStr+'T12:00:00').getDay() : new Date().getDay();
+  const cfg = emp.customSchedule||{};
+
+  // دالة مساعدة: جلب القيمة من customSchedule أو القيمة الافتراضية
+  function cfgTmpOut(isWknd){ return isWknd?(cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30):(cfg.tmpOutWk!==undefined?cfg.tmpOutWk:40); }
+  function cfgBrk(isWknd,isSpecial){
+    if(isSpecial) return cfg.brkSpecial!==undefined?cfg.brkSpecial:0;
+    return isWknd?(cfg.brkWknd!==undefined?cfg.brkWknd:120):(cfg.brkWk!==undefined?cfg.brkWk:0);
+  }
+
   if(nm.includes('محمد')){
-    if(wknd) return{shiftStart:'12:00',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
-    // الجمعة = 4 (Friday)
-    const _dow = dateStr ? new Date(dateStr+'T12:00:00').getDay() : new Date().getDay();
-    if(_dow===5) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:120,tmpOutMins:30,hasBreak:true};
-    return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true};
+    if(_dow===6) return{shiftStart:'12:00',shiftEnd:'00:00',breakMins:cfg.brkWknd!==undefined?cfg.brkWknd:120,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:true};  // السبت
+    if(_dow===0) return{shiftStart:'14:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:false}; // الأحد
+    if(_dow===5) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:0,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:30,hasBreak:false};     // الجمعة
+    return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:cfg.brkWk!==undefined?cfg.brkWk:120,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:30,hasBreak:(cfg.brkWk!==undefined?cfg.brkWk:120)>0}; // اثنين→خميس
   }
   if(nm.includes('أحمد')||nm.includes('احمد')){
-    const _adow = dateStr ? new Date(dateStr+'T12:00:00').getDay() : new Date().getDay();
-    if(_adow===0) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:120,tmpOutMins:30,hasBreak:true}; // الأحد
-    if(_adow===6) return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,tmpOutMins:30,hasBreak:true}; // السبت
-    return{shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:40,hasBreak:false};
+    if(_dow===0) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:0,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:false}; // الأحد
+    if(_dow===6) return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:cfg.brkWknd!==undefined?cfg.brkWknd:120,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:true};  // السبت
+    if(_dow===5) return{shiftStart:'14:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:40,hasBreak:false};     // الجمعة
+    return{shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:40,hasBreak:false};                  // اثنين→خميس
   }
-  return{shiftStart:emp.shiftStart||'09:00',shiftEnd:emp.shiftEnd||'17:00',breakMins:emp.breakMins||30,tmpOutMins:30,hasBreak:true};
+  // موظفون آخرون — يعتمد على customSchedule أو الإعدادات العامة
+  const isSpecialDay = (_dow===5||_dow===0);
+  const brkMins = isSpecialDay?cfgBrk(false,true):(wknd?cfgBrk(true,false):cfgBrk(false,false));
+  return{
+    shiftStart:emp.shiftStart||'09:00',
+    shiftEnd:emp.shiftEnd||'17:00',
+    breakMins:brkMins,
+    tmpOutMins:wknd?cfgTmpOut(true):cfgTmpOut(false),
+    hasBreak:brkMins>0,
+    offDay:cfg.offDay
+  };
 }
 function updateKioskLateStatus(){
   const today=todayStr();
@@ -2102,24 +2238,44 @@ function calcCompensationCredit(empId, monthStr) {
   let credit = 0;
   recs.forEach(rec => {
     const sched = getEmpSchedule(emp, rec.date);
-    // حضور مبكر
+
+    // حضور مبكر عن موعد الدوام
     if (rec.checkIn) {
       const sStart = toMins(sched.shiftStart);
       const cIn = toMins(rec.checkIn);
       if (cIn < sStart) credit += sStart - cIn;
     }
+
     // بقاء بعد نهاية الدوام
-    if (rec.checkOut && sched.shiftEnd !== '00:00') {
-      const sEnd = toMins(sched.shiftEnd);
-      const cOut = toMins(rec.checkOut);
-      if (cOut > sEnd) credit += cOut - sEnd;
+    if (rec.checkOut) {
+      if (sched.shiftEnd === '00:00') {
+        // دوام ينتهي منتصف الليل — أي انصراف بعد 00:00 يُحسب رصيد
+        const cOut = toMins(rec.checkOut);
+        // لو الانصراف بعد منتصف الليل (00:01 → 06:00)
+        if (cOut >= 0 && cOut <= 360) credit += cOut; // دقائق بعد منتصف الليل
+      } else {
+        const sEnd = toMins(sched.shiftEnd);
+        const cOut = toMins(rec.checkOut);
+        if (cOut > sEnd) credit += cOut - sEnd;
+      }
     }
-    // استراحة أقصر من المسموح
-    if (rec.breakStart && rec.breakEnd && sched.hasBreak && sched.breakMins > 0) {
-      let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
-      if (bUsed < 0) bUsed += 24 * 60;
-      if (bUsed < sched.breakMins) credit += sched.breakMins - bUsed;
+
+    // ما أخذ بريك أصلاً — يُحسب له كامل وقت البريك
+    if (sched.hasBreak && sched.breakMins > 0) {
+      if (!rec.breakStart) {
+        credit += sched.breakMins; // ما أخذ بريك كامل
+      } else if (rec.breakStart && rec.breakEnd) {
+        // أخذ بريك أقصر من المسموح
+        let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
+        if (bUsed < 0) bUsed += 24 * 60;
+        if (bUsed < sched.breakMins) credit += sched.breakMins - bUsed;
+      }
     }
+
+    // خروج مؤقت أقل من المسموح — الفرق يُحسب رصيد
+    const tmpUsed = getTmpUsed(rec);
+    const tmpLimit = sched.tmpOutMins;
+    if (tmpUsed < tmpLimit && tmpUsed > 0) credit += tmpLimit - tmpUsed;
   });
 
   return credit;
@@ -2357,6 +2513,155 @@ async function checkManagerActive(){
 
 // مراقبة كل 5 ثواني
 setInterval(checkManagerActive, 5000);
+
+
+// ═══════════════════════════════════════════════
+//  حساب التعويض اليومي لسجل واحد
+// ═══════════════════════════════════════════════
+function calcDayDebt(rec, emp) {
+  if (!rec || !rec.checkIn) return 0;
+  const sched = getEmpSchedule(emp, rec.date);
+  let debt = 0;
+  // تأخير الحضور
+  const sStart = toMins(sched.shiftStart);
+  const cIn    = toMins(rec.checkIn);
+  if (cIn > sStart + 15) debt += cIn - sStart;
+  // تجاوز الاستراحة
+  if (rec.breakStart && rec.breakEnd && sched.hasBreak && sched.breakMins > 0) {
+    let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
+    if (bUsed < 0) bUsed += 24*60;
+    if (bUsed > sched.breakMins) debt += bUsed - sched.breakMins;
+  }
+  // تجاوز الخروج المؤقت
+  const tmpUsed = getTmpUsed(rec);
+  if (tmpUsed > sched.tmpOutMins) debt += tmpUsed - sched.tmpOutMins;
+  // انصراف مبكر
+  if (rec.checkOut && sched.shiftEnd !== '00:00') {
+    const sEnd = toMins(sched.shiftEnd);
+    const cOut = toMins(rec.checkOut);
+    if (cOut < sEnd - 5) debt += sEnd - cOut;
+  }
+  return debt;
+}
+
+function calcDayCredit(rec, emp) {
+  if (!rec || !rec.checkIn) return 0;
+  const sched = getEmpSchedule(emp, rec.date);
+  let credit = 0;
+  // حضور مبكر
+  const sStart = toMins(sched.shiftStart);
+  const cIn    = toMins(rec.checkIn);
+  if (cIn < sStart) credit += sStart - cIn;
+  // بقاء بعد نهاية الدوام
+  if (rec.checkOut) {
+    if (sched.shiftEnd === '00:00') {
+      const cOut = toMins(rec.checkOut);
+      if (cOut >= 0 && cOut <= 360) credit += cOut; // بعد منتصف الليل
+    } else {
+      const sEnd = toMins(sched.shiftEnd);
+      const cOut = toMins(rec.checkOut);
+      if (cOut > sEnd) credit += cOut - sEnd;
+    }
+  }
+  // ما أخذ بريك كامل
+  if (sched.hasBreak && sched.breakMins > 0) {
+    if (!rec.breakStart) {
+      credit += sched.breakMins;
+    } else if (rec.breakStart && rec.breakEnd) {
+      let bUsed = toMins(rec.breakEnd) - toMins(rec.breakStart);
+      if (bUsed < 0) bUsed += 24*60;
+      if (bUsed < sched.breakMins) credit += sched.breakMins - bUsed;
+    }
+  }
+  return credit;
+}
+
+function buildCompHtml(net, debt, credit) {
+  if (debt === 0 && credit === 0) return '<span style="color:var(--green);font-size:11px">✅ منتظم</span>';
+  let parts = [];
+  if (debt > 0) {
+    const h=Math.floor(debt/60), m=debt%60;
+    const lbl = h>0?h+'س '+m+'د':m+'د';
+    parts.push(`<span class="tbank-neg" style="font-size:11px">🔴 دين ${lbl}</span>`);
+  }
+  if (credit > 0) {
+    const h=Math.floor(credit/60), m=credit%60;
+    const lbl = h>0?h+'س '+m+'د':m+'د';
+    parts.push(`<span class="tbank-pos" style="font-size:11px">✅ رصيد +${lbl}</span>`);
+  }
+  if (net !== 0) {
+    const abs=Math.abs(net), h=Math.floor(abs/60), m=abs%60;
+    const lbl = h>0?h+'س '+m+'د':m+'د';
+    const cls = net > 0 ? 'tbank-pos' : 'tbank-neg';
+    const icon = net > 0 ? '⬆️' : '⬇️';
+    parts.push(`<span class="${cls}" style="font-size:11px;font-weight:800">${icon} صافي: ${net>0?'+':''}${net>0?'':'-'}${lbl}</span>`);
+  }
+  return parts.join('<br>');
+}
+
+
+// ═══════════════════════════════════════════════
+//  نظام التعديل بالأقسام
+// ═══════════════════════════════════════════════
+let currentEditType = 'checkin';
+
+function switchEditType(type) {
+  currentEditType = type;
+  const sections = ['checkin','break','tmpout','status'];
+  sections.forEach(s => {
+    const sec = document.getElementById('edit-section-'+s);
+    const btn = document.getElementById('et-'+s);
+    if (sec) sec.style.display = s===type ? 'block' : 'none';
+    if (btn) btn.classList.toggle('active', s===type);
+  });
+}
+
+function addTmpOutRow(out='', inTime='') {
+  const list = document.getElementById('tmpout-list');
+  const idx  = list.children.length;
+  const div  = document.createElement('div');
+  div.className = 'tmpout-row';
+  div.style.cssText = 'display:flex;align-items:center;gap:8px;background:var(--s2);padding:8px;border-radius:8px;border:1px solid var(--border)';
+  div.innerHTML = `
+    <span style="font-size:12px;color:var(--muted);min-width:20px">${idx+1}</span>
+    <div style="flex:1">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">خروج</label>
+      <input type="time" class="finp tmpout-out" value="${out}" style="padding:6px 8px;font-size:13px">
+    </div>
+    <div style="flex:1">
+      <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">رجوع</label>
+      <input type="time" class="finp tmpout-in" value="${inTime}" style="padding:6px 8px;font-size:13px">
+    </div>
+    <button onclick="this.parentElement.remove();renumberTmpRows()" style="background:rgba(244,63,94,.15);border:none;border-radius:6px;color:var(--red);padding:6px 9px;cursor:pointer;font-size:14px">🗑️</button>
+  `;
+  list.appendChild(div);
+}
+
+function renumberTmpRows() {
+  document.querySelectorAll('.tmpout-row').forEach((row, i) => {
+    const num = row.querySelector('span');
+    if (num) num.textContent = i+1;
+  });
+}
+
+function loadTmpOutRows(tmpOuts) {
+  const list = document.getElementById('tmpout-list');
+  list.innerHTML = '';
+  if (tmpOuts && tmpOuts.length) {
+    tmpOuts.forEach(t => addTmpOutRow(t.out||'', t.in||''));
+  }
+}
+
+function getTmpOutRows() {
+  const rows = document.querySelectorAll('.tmpout-row');
+  const result = [];
+  rows.forEach(row => {
+    const out = row.querySelector('.tmpout-out').value;
+    const inT = row.querySelector('.tmpout-in').value;
+    if (out) result.push({ out, in: inT||null });
+  });
+  return result;
+}
 
 // Init mgr-login hidden
 document.getElementById('mgr-login').style.display='none';
