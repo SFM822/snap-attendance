@@ -1141,16 +1141,39 @@ function isEarlyOut(emp,checkOut,dateStr){
   const s=toMins(sched.shiftEnd); const c=toMins(checkOut);
   return c < s-5;
 }
-function calcWorked(rec){
+function calcWorked(rec, emp){
   if(!rec||!rec.checkIn||!rec.checkOut) return null;
+  const sched = emp ? getEmpSchedule(emp, rec.date) : null;
+
+  // الوقت الكلي من الدخول للخروج
   let mins = toMins(rec.checkOut) - toMins(rec.checkIn);
   if(mins<0) mins+=24*60;
+
+  // طرح وقت الاستراحة الفعلي
   if(rec.breakStart&&rec.breakEnd){
     let bm=toMins(rec.breakEnd)-toMins(rec.breakStart);
     if(bm<0) bm+=24*60;
     mins-=bm;
   }
-  if(mins<0) return null;
+
+  // طرح التأخير (الوقت قبل بداية الدوام لا يُحسب)
+  if(sched){
+    const sStart = toMins(sched.shiftStart);
+    const cIn    = toMins(rec.checkIn);
+    // لو الدخول قبل بداية الدوام، نبدأ الحساب من بداية الدوام فقط
+    // (الوقت الزائد قبل الدوام يُحسب في الرصيد وليس في ساعات العمل)
+    if(cIn < sStart){
+      mins -= (sStart - cIn);
+    }
+    // طرح الانصراف المبكر — الوقت بعد الانصراف المبكر لا يُحسب
+    // (ما في شيء يُطرح لأن checkOut هو الوقت الفعلي)
+  }
+
+  // طرح الخروج المؤقت
+  const tmpUsed = getTmpUsed(rec);
+  if(tmpUsed > 0) mins -= tmpUsed;
+
+  if(mins<=0) return '0س 0د';
   const h=Math.floor(mins/60), m=mins%60;
   return `${h}س ${m}د`;
 }
@@ -1449,7 +1472,7 @@ function renderTodayStats(){
       else if(_dn2>0) _rc2='row-credit';
       else if(rec.checkIn&&_dd2===0) _rc2='row-ok';
       else _rc2='';
-      const worked=calcWorked(rec);
+      const worked=calcWorked(rec,emp);
       const brk=rec.breakStart?(rec.breakEnd?`${rec.breakStart}–${rec.breakEnd}`:`${rec.breakStart}...`):'—';
     let badge='';
       if(rec.checkOut) badge=`<span class="badge ${early?'bl':'bp'}">${early?'انصراف مبكر':'انصرف'}</span>`;
@@ -1510,7 +1533,7 @@ function loadRecs(){
   const tbl=document.getElementById('recs-tbl');
   if(!recs.length){ tbl.innerHTML='<div class="empty"><div class="ei">📊</div>لا توجد سجلات</div>'; return; }
   const emps=getEmps();
-  let rows='<table><thead><tr><th>اليوم</th><th>التاريخ</th><th>الموظف</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>التعويض</th><th>الحالة</th><th>ملاحظة</th><th>إجراء</th></tr></thead><tbody>';
+  let rows='<table><thead><tr><th>اليوم</th><th>التاريخ</th><th>الموظف</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>التعويض</th><th>الحالة</th><th>ساعات العمل</th><th>ملاحظة</th><th>إجراء</th></tr></thead><tbody>';
   recs.forEach(rec=>{
     const emp=emps.find(e=>e.id===rec.empId)||{};
     const late=isLateIn(emp,rec.checkIn,rec.date), early=rec.earlyOut;
@@ -1523,7 +1546,7 @@ function loadRecs(){
     else if(_rn2>0) _rcr='row-credit';
     else if(rec.checkIn&&_rd2===0) _rcr='row-ok';
     else _rcr='';
-    const worked=calcWorked(rec);
+    const worked=calcWorked(rec,emp);
     const _rs2=getEmpSchedule(emp,rec.date);
     const sEnd=_rs2.shiftEnd==='00:00'?'00:00':_rs2.shiftEnd;
     const shift=emp.name?`${_rs2.shiftStart}–${sEnd}`:'—';
@@ -1548,6 +1571,7 @@ function loadRecs(){
       <td>${tmp.html}</td>
       <td>${_rch}</td>
       <td>${badge}</td>
+      <td style="font-weight:700;color:var(--accent)">${worked||'—'}</td>
       <td>${esc(rec.note||'')}</td>
       <td class="tbs">
         <button class="tb tbe" onclick="openEdit('${esc(rec.id)}')">✏️</button>
@@ -1824,7 +1848,7 @@ function sendMonthlyReport(){
       const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short'});
       const late=isLateIn(emp,rec.checkIn);
       const early=rec.earlyOut;
-      const worked=calcWorked(rec)||'—';
+      const worked=calcWorked(rec,emp)||'—';
       const tmpUsed=getTmpUsed(rec);
       let flags='';
       if(late){ flags+='⚠️متأخر '; empLate++; totalLate++; }
