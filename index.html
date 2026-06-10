@@ -1581,7 +1581,57 @@ function loadRecs(){
       </td></tr>`;
   });
   rows+='</tbody></table>';
-  tbl.innerHTML=rows;
+
+  // ─── إجمالي التعويض لكل موظف في الفترة ───
+  const emps2 = getEmps();
+  let summaryHtml = '<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:14px">';
+
+  // تجميع السجلات حسب الموظف
+  const empGroups = {};
+  recs.forEach(rec => {
+    if(!empGroups[rec.empId]) empGroups[rec.empId] = [];
+    empGroups[rec.empId].push(rec);
+  });
+
+  Object.keys(empGroups).forEach(empId => {
+    const emp = emps2.find(e => e.id === empId) || {};
+    const empRecs = empGroups[empId];
+    let totalDebt = 0, totalCredit = 0;
+
+    empRecs.forEach(rec => {
+      totalDebt   += calcDayDebt(rec, emp);
+      totalCredit += calcDayCredit(rec, emp);
+    });
+
+    const net = totalCredit - totalDebt;
+    const netAbs = Math.abs(net);
+    const netH = Math.floor(netAbs/60), netM = netAbs%60;
+    const netLabel = netH>0 ? netH+'س '+netM+'د' : netM+'د';
+
+    const debtH = Math.floor(totalDebt/60), debtM = totalDebt%60;
+    const credH = Math.floor(totalCredit/60), credM = totalCredit%60;
+
+    const netCls  = net >= 0 ? 'tbank-pos' : 'tbank-neg';
+    const netIcon = net >= 0 ? '✅' : '⚠️';
+    const netText = net >= 0 ? 'رصيد +'+netLabel : 'عليه تعويض '+netLabel;
+
+    summaryHtml += `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 16px;min-width:200px">
+      <div style="font-size:13px;font-weight:800;margin-bottom:8px">${esc(emp.emoji||'👤')} ${esc(emp.name||empId)}</div>
+      <div style="font-size:12px;display:flex;flex-direction:column;gap:4px">
+        <span class="tbank-neg">🔴 ديون: ${debtH>0?debtH+'س ':''}${debtM}د</span>
+        <span class="tbank-pos">✅ رصيد: ${credH>0?credH+'س ':''}${credM}د</span>
+        <span class="${netCls}" style="font-weight:800;font-size:13px;margin-top:4px;border-top:1px solid var(--border);padding-top:4px">${netIcon} الصافي: ${net>=0?'+':''}${net>0?netLabel:(net<0?'-'+netLabel:'صفر')}</span>
+      </div>
+    </div>`;
+  });
+
+  summaryHtml += '</div>';
+
+  if(Object.keys(empGroups).length > 0){
+    tbl.innerHTML = rows + `<div style="margin-top:12px"><div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px">📊 إجمالي التعويض للفترة المحددة:</div>${summaryHtml}</div>`;
+  } else {
+    tbl.innerHTML = rows;
+  }
 }
 
 // ═══════════════════════════════════════════════
