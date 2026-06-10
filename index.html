@@ -1169,9 +1169,11 @@ function calcWorked(rec, emp){
     // (ما في شيء يُطرح لأن checkOut هو الوقت الفعلي)
   }
 
-  // طرح الخروج المؤقت
-  const tmpUsed = getTmpUsed(rec);
-  if(tmpUsed > 0) mins -= tmpUsed;
+  // طرح الخروج المؤقت — فقط الزيادة عن الوقت المسموح
+  const tmpUsed  = getTmpUsed(rec);
+  const tmpLimit = sched ? sched.tmpOutMins : 30;
+  const tmpOver  = tmpUsed > tmpLimit ? tmpUsed - tmpLimit : 0;
+  if(tmpOver > 0) mins -= tmpOver;
 
   if(mins<=0) return '0س 0د';
   const h=Math.floor(mins/60), m=mins%60;
