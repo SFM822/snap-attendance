@@ -1368,6 +1368,7 @@ function openMgrDash(){
   initReportMonths();
   initTbMonths();
   initCompMonths();
+  setDefaultDates();
   checkMonthlyReminder();
   startFbSync();
   // Pull latest and init lastRecIds to avoid false alerts
@@ -1399,6 +1400,7 @@ function mTab(name, btn){
   const pg=document.getElementById('mt-'+name); if(pg) pg.classList.add('active');
   if(name==='today') renderTodayStats();
   if(name==='employees') renderEmpTable();
+  if(name==='records') setDefaultDates();
 }
 
 // ═══════════════════════════════════════════════
@@ -1485,10 +1487,21 @@ function populateEmpFilter(){
   const emps=getEmps();
   sel.innerHTML='<option value="">— الكل —</option>'+emps.map(e=>`<option value="${esc(e.id)}">${esc(e.name)}</option>`).join('');
 }
+function normDate(v){
+  if(!v) return '';
+  // handle dd/mm/yyyy or mm/dd/yyyy → yyyy-mm-dd
+  if(v.includes('/')){
+    const p=v.split('/');
+    if(p.length===3){
+      if(p[2].length===4) return p[2]+'-'+p[1].padStart(2,'0')+'-'+p[0].padStart(2,'0');
+    }
+  }
+  return v;
+}
 function loadRecs(){
   const empId=(document.getElementById('rf-emp')||{}).value||'';
-  const from=(document.getElementById('rf-from')||{}).value||'';
-  const to=(document.getElementById('rf-to')||{}).value||'';
+  const from=normDate((document.getElementById('rf-from')||{}).value||'');
+  const to=normDate((document.getElementById('rf-to')||{}).value||'');
   let recs=getRecs();
   if(empId) recs=recs.filter(r=>r.empId===empId);
   if(from)  recs=recs.filter(r=>r.date>=from);
@@ -1744,6 +1757,19 @@ function delEmp(id){
 // ═══════════════════════════════════════════════
 //  SETTINGS — CHANGE MGR PIN
 // ═══════════════════════════════════════════════
+function setDefaultDates(){
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm   = String(now.getMonth()+1).padStart(2,'0');
+  const dd   = String(now.getDate()).padStart(2,'0');
+  const today = yyyy+'-'+mm+'-'+dd;
+  const firstDay = yyyy+'-'+mm+'-01';
+  const fromEl = document.getElementById('rf-from');
+  const toEl   = document.getElementById('rf-to');
+  if(fromEl && !fromEl.value) fromEl.value = firstDay;
+  if(toEl   && !toEl.value)   toEl.value   = today;
+}
+
 function initReportMonths(){
   const sel=document.getElementById('report-month'); if(!sel) return;
   const now=new Date();
