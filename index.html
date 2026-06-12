@@ -895,7 +895,7 @@ setInterval(tick,1000); tick();
 
 function dateParts(){
   const now = new Date();
-  const day    = now.toLocaleDateString('ar-SA',{weekday:'long'});
+  const day    = now.toLocaleDateString('ar-SA',{weekday:'long',calendar:'gregory'});
   const hijri  = now.toLocaleDateString('ar-SA-u-ca-islamic',{day:'numeric',month:'long',year:'numeric'});
   const miladi = now.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});
   return {day, hijri, miladi};
@@ -1468,7 +1468,7 @@ function renderTodayStats(){
       const _dv=isDayViolation(rec,emp);
       const _dd2=calcDayDebt(rec,emp), _dc2=calcDayCredit(rec,emp), _dn2=_dc2-_dd2;
       const _tdays=['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
-      const _tdname = rec.date ? _tdays[new Date(rec.date+'T12:00:00').getDay()] : new Date().toLocaleDateString('ar-SA',{weekday:'long'});
+      const _tdname = rec.date ? _tdays[new Date(rec.date+'T12:00:00').getDay()] : new Date().toLocaleDateString('ar-SA',{weekday:'long',calendar:'gregory'});
       let _rc2;
       if(_dv||(_dd2>0&&_dc2<=0)) _rc2='row-debt';
       else if(_dn2>0) _rc2='row-credit';
@@ -1896,7 +1896,7 @@ function sendMonthlyReport(){
 
     let empLate=0, empEarly=0, empAbsent=0, empPresent=0;
     empRecs.sort((a,b)=>a.date.localeCompare(b.date)).forEach(rec=>{
-      const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short'});
+      const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short',calendar:'gregory'});
       const late=isLateIn(emp,rec.checkIn);
       const early=rec.earlyOut;
       const worked=calcWorked(rec,emp)||'—';
@@ -1918,7 +1918,7 @@ function sendMonthlyReport(){
   body+=`⚠️ تأخيرات: ${totalLate}\n`;
   body+=`🔴 انصراف مبكر: ${totalEarly}\n`;
   body+=`❌ غيابات: ${totalAbsent}\n`;
-  body+=`\nتم الإنشاء: ${new Date().toLocaleDateString('ar-SA')}`;
+  body+=`\nتم الإنشاء: ${new Date().toLocaleDateString('ar-SA',{calendar:'gregory'})}`;
 
   const subject=`تقرير الحضور - SNAP FILTER PHONES - ${monthLabel}`;
   const mailto=`mailto:snapfiltermobiles@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -2147,7 +2147,7 @@ function calcTimeBank(){
       const tmpUsed=getTmpUsed(rec);
       const tmpDiff=-(tmpUsed-sched.tmpOutMins);
 
-      const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short'});
+      const dateLabel=new Date(rec.date).toLocaleDateString('ar-SA',{weekday:'short',day:'numeric',month:'short',calendar:'gregory'});
       const balCls=fmtMinsCls(dayBal);
       const late=isLateIn(emp,rec.checkIn,rec.date);
       const violation=isDayViolation(rec,emp);
@@ -2415,7 +2415,7 @@ function initCompMonths() {
   for (let i = 0; i < 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const val = d.toISOString().slice(0, 7);
-    const lbl = d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
+    const lbl = d.toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', calendar: 'gregory' });
     const opt = document.createElement('option');
     opt.value = val; opt.textContent = lbl;
     sel.appendChild(opt);
@@ -2429,7 +2429,7 @@ function renderCompensation() {
   const container = document.getElementById('comp-results');
   if (!emps.length) { container.innerHTML = '<div class="empty"><div class="ei">👥</div>لا يوجد موظفون</div>'; return; }
 
-  const monthLabel = new Date(monthVal + '-01').toLocaleDateString('ar-SA', { year: 'numeric', month: 'long' });
+  const monthLabel = new Date(monthVal + '-01').toLocaleDateString('ar-SA', { year: 'numeric', month: 'long', calendar: 'gregory' });
   let html = '';
 
   emps.forEach(emp => {
@@ -2504,11 +2504,43 @@ function renderCompensation() {
       </tr>`;
     }
 
+    // حساب الراتب
+    const salary = calcFinalSalary(emp.id, monthVal);
+    let salaryHtml = '';
+    if (salary) {
+      const hrLabel = salary.hourlyRate.toFixed(1);
+      let adjLine = '';
+      if (salary.adjustmentType === 'deduction') {
+        const ah = Math.floor(salary.adjustmentHours);
+        const am = Math.round((salary.adjustmentHours - ah) * 60);
+        adjLine = `<div class="tbank-neg" style="font-size:13px;font-weight:700">🔻 خصم ${ah>0?ah+'س ':''}${am}د = -${Math.abs(salary.adjustment).toFixed(1)} درهم</div>`;
+      } else if (salary.adjustmentType === 'bonus') {
+        const ah = Math.floor(salary.adjustmentHours);
+        const am = Math.round((salary.adjustmentHours - ah) * 60);
+        adjLine = `<div class="tbank-pos" style="font-size:13px;font-weight:700">🔺 مكافأة ${ah>0?ah+'س ':''}${am}د = +${salary.adjustment.toFixed(1)} درهم</div>`;
+      } else {
+        adjLine = `<div style="font-size:13px;color:var(--muted)">— بدون تعديل</div>`;
+      }
+      salaryHtml = `<div style="background:rgba(79,142,247,.06);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:12px">
+        <div style="font-size:12px;font-weight:800;color:var(--accent);margin-bottom:8px">💰 حساب الراتب — ${monthLabel}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--muted);margin-bottom:6px">
+          <span>الراتب الأساسي: <strong style="color:var(--text)">${salary.baseSalary} درهم</strong></span>
+          <span>سعر الساعة: <strong style="color:var(--text)">${hrLabel} درهم</strong></span>
+          <span>ساعات الدوام المتوقعة: <strong style="color:var(--text)">${salary.expectedHours.toFixed(1)}س</strong></span>
+        </div>
+        ${adjLine}
+        <div style="font-size:16px;font-weight:900;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+          💵 الراتب النهائي: <span class="${salary.adjustmentType==='deduction'?'tbank-neg':salary.adjustmentType==='bonus'?'tbank-pos':''}">${salary.finalSalary.toFixed(1)} درهم</span>
+        </div>
+      </div>`;
+    }
+
     html += `<div class="card">
       <div class="ch" style="justify-content:space-between;flex-wrap:wrap;gap:8px">
         <span>${esc(emp.emoji || '👤')} ${esc(emp.name)}</span>
         <span class="${netCls}" style="font-size:14px">${netIcon} ${netText}</span>
       </div>
+      ${salaryHtml}
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
         <div style="background:rgba(244,63,94,.08);border-radius:8px;padding:8px 14px;font-size:12px">
           🔴 إجمالي الديون: <strong class="tbank-neg">${Math.floor(debtMins/60) > 0 ? Math.floor(debtMins/60)+'س ' : ''}${debtMins%60}د</strong>
@@ -2552,7 +2584,7 @@ function tickLockScreen(){
   if(cl) cl.textContent = t;
   const dl = document.getElementById('lock-date');
   if(dl){
-    const day = n.toLocaleDateString('ar-SA',{weekday:'long'});
+    const day = n.toLocaleDateString('ar-SA',{weekday:'long',calendar:'gregory'});
     const mil = n.toLocaleDateString('ar-EG',{day:'numeric',month:'long',year:'numeric'});
     dl.textContent = day + ' — ' + mil;
   }
@@ -2763,6 +2795,82 @@ function getTmpOutRows() {
     if (out) result.push({ out, in: inT||null });
   });
   return result;
+}
+
+
+// ═══════════════════════════════════════════════
+//  حساب الراتب — الخصم والمكافأة
+// ═══════════════════════════════════════════════
+const BASE_SALARY = 1000; // الراتب الأساسي بالدرهم
+
+// حساب ساعات الدوام المتوقعة في الشهر لموظف معين
+function calcExpectedMonthlyHours(emp, monthStr) {
+  const year = parseInt(monthStr.split('-')[0]);
+  const month = parseInt(monthStr.split('-')[1]);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  let totalMins = 0;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dateStr = `${monthStr}-${String(day).padStart(2,'0')}`;
+    const sched = getEmpSchedule(emp, dateStr);
+    // تخطي يوم الإجازة المخصص
+    if (sched.offDay !== undefined) {
+      const dow = new Date(dateStr+'T12:00:00').getDay();
+      if (dow === sched.offDay) continue;
+    }
+    let mins;
+    if (sched.shiftEnd === '00:00') {
+      mins = (24*60) - toMins(sched.shiftStart);
+    } else {
+      mins = toMins(sched.shiftEnd) - toMins(sched.shiftStart);
+    }
+    mins -= sched.breakMins || 0;
+    totalMins += mins;
+  }
+  return totalMins / 60; // بالساعات
+}
+
+// حساب الراتب النهائي بعد الخصم/المكافأة
+function calcFinalSalary(empId, monthStr) {
+  const emps = getEmps();
+  const emp = emps.find(e => e.id === empId);
+  if (!emp) return null;
+
+  const { debtMins } = calcCompensationDebt(empId, monthStr);
+  const creditMins = calcCompensationCredit(empId, monthStr);
+  const netMins = creditMins - debtMins;
+
+  const expectedHours = calcExpectedMonthlyHours(emp, monthStr);
+  const hourlyRate = expectedHours > 0 ? BASE_SALARY / expectedHours : 0;
+
+  let adjustment = 0;
+  let adjustmentType = 'none'; // 'deduction' | 'bonus' | 'none'
+  let adjustmentHours = 0;
+
+  if (netMins < 0) {
+    // عليه تعويض ولم يعوضه — خصم
+    adjustmentHours = Math.abs(netMins) / 60;
+    adjustment = -(adjustmentHours * hourlyRate);
+    adjustmentType = 'deduction';
+  } else if (netMins > 0) {
+    // رصيد زائد — مكافأة
+    adjustmentHours = netMins / 60;
+    adjustment = adjustmentHours * hourlyRate;
+    adjustmentType = 'bonus';
+  }
+
+  const finalSalary = BASE_SALARY + adjustment;
+
+  return {
+    baseSalary: BASE_SALARY,
+    hourlyRate,
+    expectedHours,
+    netMins,
+    adjustmentType,
+    adjustmentHours,
+    adjustment,
+    finalSalary
+  };
 }
 
 // Init mgr-login hidden
