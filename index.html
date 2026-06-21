@@ -1281,6 +1281,25 @@ function doAction(type){
   } else if(type==='out'){
     if(!rec||rec.checkOut){ showToast('⚠️ لم تسجّل حضوراً أو انصرفت مسبقاً','err'); resetAutoBack(); return; }
     if(rec.breakStart&&!rec.breakEnd){ showToast('⚠️ أنت في استراحة — سجّل الرجوع أولاً','err'); resetAutoBack(); return; }
+    // منع الانصراف المبكر إلا في يوم الإجازة أو أيام الانصراف المبكر المسموح (الجمعة لمحمد، الأحد لأحمد)
+    const _sched = getEmpSchedule(currentEmp, today);
+    const _jsDow = new Date(today+'T12:00:00').getDay();
+    const _isOffDay = currentEmp.customSchedule && currentEmp.customSchedule.offDay !== undefined
+      ? _jsDow === currentEmp.customSchedule.offDay
+      : false;
+    // أيام الانصراف المبكر المسموح (شيفت End ≠ 00:00)
+    const _isEarlyShift = _sched.shiftEnd !== '00:00';
+    if(!_isOffDay && !_isEarlyShift){
+      // تحقق من الوقت الحالي مقارنة بنهاية الدوام
+      const _nowMins = toMins(time);
+      const _endMins = toMins(_sched.shiftEnd);
+      // نهاية الدوام 00:00 → لا نمنع الانصراف (منتصف الليل)
+      if(_sched.shiftEnd !== '00:00' && _nowMins < _endMins - 5){
+        showToast('⚠️ لا يمكن الانصراف قبل نهاية الدوام ('+_sched.shiftEnd+')','err');
+        showEmpAlert('⚠️ لا يمكن الانصراف قبل '+_sched.shiftEnd,'warn');
+        resetAutoBack(); return;
+      }
+    }
     recs[idx].checkOut=time;
     const earlyOut=isEarlyOut(currentEmp,time,today);
     recs[idx].earlyOut=earlyOut;
