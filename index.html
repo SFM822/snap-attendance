@@ -455,6 +455,9 @@ tr.row-credit:hover td { background: rgba(16,185,129,0.15) !important; }
 
     <!-- TODAY -->
     <div class="mpage active" id="mt-today">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
+        <button class="btn-p" style="font-size:12px;padding:7px 14px" onclick="fbPull().then(()=>renderTodayStats())">🔄 تحديث</button>
+      </div>
       <div class="stats5">
         <div class="st" style="--sc:var(--green)"><div class="st-v" id="s-p">0</div><div class="st-l">حاضر</div></div>
         <div class="st" style="--sc:var(--red)"><div class="st-v" id="s-a">0</div><div class="st-l">غائب</div></div>
@@ -841,7 +844,7 @@ async function fbPull(){
     fbDot(true);
   }catch(e){ fbDot(false); }
 }
-function startFbSync(){ fbSyncTimer=setInterval(async()=>{ await fbPull(); renderTodayStats(); },30000); }
+function startFbSync(){ fbSyncTimer=setInterval(async()=>{ await fbPull(); renderTodayStats(); if(document.getElementById('mt-today')&&document.getElementById('mt-today').style.display!=='none') renderTodayStats(); },10000); }
 function stopFbSync(){  clearInterval(fbSyncTimer); }
 // Pull on load — then push local data up
 fbPull().then(()=>{
@@ -1442,7 +1445,7 @@ function mTab(name, btn){
   document.querySelectorAll('.mpage').forEach(p=>p.classList.remove('active'));
   if(btn) btn.classList.add('active');
   const pg=document.getElementById('mt-'+name); if(pg) pg.classList.add('active');
-  if(name==='today') renderTodayStats();
+  if(name==='today'){ renderTodayStats(); startFbSync(); }
   if(name==='employees') renderEmpTable();
   if(name==='records') setDefaultDates();
 }
