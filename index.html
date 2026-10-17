@@ -863,7 +863,20 @@ fbPull().then(()=>{
   }
   if(changed) saveEmps(emps);
   else if(emps.length) fbPush('employees',emps);
-  const recs=getRecs(); if(recs.length) fbPush('records',recs);
+  // ترقية السجلات القديمة: أضف shiftEnd = checkIn + 12 ساعة لكل سجل ليس عنده shiftEnd
+  let recs=getRecs(); let recsChanged=false;
+  recs=recs.map(r=>{
+    if(r.checkIn && !r.shiftEnd){
+      const ciMins=toMins(r.checkIn);
+      const endMins=(ciMins+12*60)%(24*60);
+      const autoEnd=String(Math.floor(endMins/60)).padStart(2,'0')+':'+String(endMins%60).padStart(2,'0');
+      recsChanged=true;
+      return {...r, shiftStart:r.shiftStart||r.checkIn, shiftEnd:autoEnd, breakMins:120, tmpOutMins:30};
+    }
+    return r;
+  });
+  if(recsChanged){ saveRecs(recs); fbPush('records',recs); }
+  else if(recs.length) fbPush('records',recs);
 });
 
 // Auto-push every 60 seconds from kiosk (no manager login needed)
