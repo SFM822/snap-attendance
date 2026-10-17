@@ -845,7 +845,24 @@ function startFbSync(){ fbSyncTimer=setInterval(async()=>{ await fbPull(); rende
 function stopFbSync(){  clearInterval(fbSyncTimer); }
 // Pull on load — then push local data up
 fbPull().then(()=>{
-  const emps=getEmps(); if(emps.length) fbPush('employees',emps);
+  let emps=getEmps();
+  let changed=false;
+  // تحديث اسم محمد زكريا إلى Abu Fareeda
+  emps=emps.map(e=>{
+    if(e.id==='emp1'&&(e.name==='محمد زكريا'||e.name.includes('محمد'))){
+      changed=true; return {...e,name:'Abu Fareeda',autoShift:true};
+    }
+    // تأكد كل الموظفين عندهم autoShift
+    if(!e.autoShift){ changed=true; return {...e,autoShift:true}; }
+    return e;
+  });
+  // إضافة Saeed إذا لم يكن موجوداً
+  if(!emps.find(e=>e.id==='emp3')){
+    emps.push({id:'emp3',name:'Saeed',role:'موظف',pin:'3333',shiftStart:'09:00',shiftEnd:'21:00',breakMins:120,phone:'',emoji:'👨‍🛠️',autoShift:true});
+    changed=true;
+  }
+  if(changed) saveEmps(emps);
+  else if(emps.length) fbPush('employees',emps);
   const recs=getRecs(); if(recs.length) fbPush('records',recs);
 });
 
@@ -875,8 +892,9 @@ function cleanPin(s){
 // ═══════════════════════════════════════════════
 if(!getEmps().length){
   saveEmps([
-    {id:'emp1',name:'محمد زكريا',role:'موظف',pin:'1111',shiftStart:'09:30',shiftEnd:'00:00',breakMins:120,phone:'',emoji:'👨‍💼'},
-    {id:'emp2',name:'أحمد حلمي', role:'موظف',pin:'2222',shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,phone:'',emoji:'👨‍🔧'},
+    {id:'emp1',name:'Abu Fareeda',role:'موظف',pin:'1111',shiftStart:'09:00',shiftEnd:'21:00',breakMins:120,phone:'',emoji:'👨‍💼',autoShift:true},
+    {id:'emp2',name:'أحمد حلمي', role:'موظف',pin:'2222',shiftStart:'09:00',shiftEnd:'21:00',breakMins:120,phone:'',emoji:'👨‍🔧',autoShift:true},
+    {id:'emp3',name:'Saeed',      role:'موظف',pin:'3333',shiftStart:'09:00',shiftEnd:'21:00',breakMins:120,phone:'',emoji:'👨‍🛠️',autoShift:true},
   ]);
 }
 
@@ -1073,10 +1091,12 @@ function openActionScreen(){
   document.getElementById('act-name').textContent = esc(currentEmp.name);
   document.getElementById('act-role').textContent = esc(currentEmp.role);
   const _as=getEmpSchedule(currentEmp,todayStr());
-  const sEnd=_as.shiftEnd==='00:00'?'منتصف الليل':_as.shiftEnd;
-  let _bt=`⏰ ${_as.shiftStart} — ${sEnd}`;
-  if(_as.breakMins>0) _bt+=`  |  بريك ${_as.breakMins} دقيقة`;
-  _bt+=`  |  خروج مؤقت ${_as.tmpOutMins} دقيقة`;
+  // لو سجّل حضور اليوم: عرض وقت الانصراف المحسوب
+  const _todayRec=getRecs().find(r=>r.empId===currentEmp.id&&r.date===todayStr());
+  const _dispEnd=_todayRec&&_todayRec.shiftEnd?_todayRec.shiftEnd:_as.shiftEnd;
+  const sEnd=_dispEnd==='00:00'?'منتصف الليل':_dispEnd;
+  let _bt=_todayRec?`⏰ دوامك حتى ${sEnd}`:`⏰ دوام 12 ساعة من وقت الحضور`;
+  _bt+=`  |  بريك 120 دقيقة  |  خروج مؤقت 30 دقيقة`;
   document.getElementById('act-shift-badge').textContent=_bt;
   renderActState();
   resetAutoBack();
@@ -1128,18 +1148,21 @@ function toMins(t){
   const [h,m]=t.split(':').map(Number); return h*60+m;
 }
 function isLateIn(emp,checkIn,dateStr){
-  const sched=getEmpSchedule(emp,dateStr||todayStr());
-  const grace=15;
-  const s=toMins(sched.shiftStart); const c=toMins(checkIn);
-  if(s<0||c<0) return false;
-  return c > s+grace;
+  // الدوام يبدأ من وقت الحضور — لا تأخير
+  return false;
 }
 function isEarlyOut(emp,checkOut,dateStr){
   if(!checkOut) return false;
-  const sched=getEmpSchedule(emp,dateStr||todayStr());
-  if(sched.shiftEnd==='00:00') return false;
-  const s=toMins(sched.shiftEnd); const c=toMins(checkOut);
-  return c < s-5;
+  // نجيب وقت الانصراف من السجل الفعلي
+  const recs=getRecs();
+  const rec=recs.find(r=>r.empId===emp.id&&r.date===(dateStr||todayStr()));
+  const _end=rec&&rec.shiftEnd?rec.shiftEnd:'00:00';
+  if(_end==='00:00') return false;
+  const _ciMins=toMins(rec&&rec.shiftStart?rec.shiftStart:checkOut);
+  const s=toMins(_end); const c=toMins(checkOut);
+  const adjS=s<=_ciMins?s+24*60:s;
+  const adjC=c<_ciMins?c+24*60:c;
+  return adjC < adjS-5;
 }
 function calcWorked(rec, emp){
   if(!rec||!rec.checkIn||!rec.checkOut) return null;
@@ -1156,18 +1179,7 @@ function calcWorked(rec, emp){
     mins-=bm;
   }
 
-  // طرح التأخير (الوقت قبل بداية الدوام لا يُحسب)
-  if(sched){
-    const sStart = toMins(sched.shiftStart);
-    const cIn    = toMins(rec.checkIn);
-    // لو الدخول قبل بداية الدوام، نبدأ الحساب من بداية الدوام فقط
-    // (الوقت الزائد قبل الدوام يُحسب في الرصيد وليس في ساعات العمل)
-    if(cIn < sStart){
-      mins -= (sStart - cIn);
-    }
-    // طرح الانصراف المبكر — الوقت بعد الانصراف المبكر لا يُحسب
-    // (ما في شيء يُطرح لأن checkOut هو الوقت الفعلي)
-  }
+  // الدوام يبدأ من وقت الحضور — لا طرح للتأخير
 
   // طرح الخروج المؤقت — فقط الزيادة عن الوقت المسموح
   const tmpUsed  = getTmpUsed(rec);
@@ -1262,41 +1274,34 @@ function doAction(type){
   // SECURITY: validate state machine
   if(type==='in'){
     if(rec){ showToast('⚠️ تم تسجيل حضورك مسبقاً','err'); resetAutoBack(); return; }
-    const _is=getEmpSchedule(currentEmp,today);
-    const late=isLateIn(currentEmp,time,today);
+    // احسب وقت الانصراف = وقت الحضور + 12 ساعة
+    const ciMins=toMins(time);
+    const endMins=(ciMins+12*60)%(24*60);
+    const autoEnd=String(Math.floor(endMins/60)).padStart(2,'0')+':'+String(endMins%60).padStart(2,'0');
     const newRec={
       id:'r'+Date.now(),empId:currentEmp.id,empName:currentEmp.name,empRole:currentEmp.role,
       date:today,checkIn:time,checkOut:null,breakStart:null,breakEnd:null,
-      status:late?'late':'present',note:'',
-      shiftStart:_is.shiftStart,shiftEnd:_is.shiftEnd,breakMins:_is.breakMins,tmpOutMins:_is.tmpOutMins
+      status:'present',note:'',
+      shiftStart:time,shiftEnd:autoEnd,breakMins:120,tmpOutMins:30
     };
     recs.push(newRec);
-    if(late){
-      showToast('⚠️ تم التسجيل — أنت متأخر','err');
-      showEmpAlert(`⚠️ أنت متأخر عن موعد الدوام! (${_is.shiftStart})`,'warn');
-      setTimeout(updateKioskLateStatus,300);
-    } else {
-      showToast('✅ تم تسجيل حضورك');
-    }
+    showToast('✅ تم تسجيل حضورك');
+    showEmpAlert(`✅ دوامك حتى الساعة ${autoEnd} (12 ساعة + ساعتين استراحة)`,'ok');
+    setTimeout(updateKioskLateStatus,300);
   } else if(type==='out'){
     if(!rec||rec.checkOut){ showToast('⚠️ لم تسجّل حضوراً أو انصرفت مسبقاً','err'); resetAutoBack(); return; }
     if(rec.breakStart&&!rec.breakEnd){ showToast('⚠️ أنت في استراحة — سجّل الرجوع أولاً','err'); resetAutoBack(); return; }
-    // منع الانصراف المبكر إلا في يوم الإجازة أو أيام الانصراف المبكر المسموح (الجمعة لمحمد، الأحد لأحمد)
-    const _sched = getEmpSchedule(currentEmp, today);
-    const _jsDow = new Date(today+'T12:00:00').getDay();
-    const _isOffDay = currentEmp.customSchedule && currentEmp.customSchedule.offDay !== undefined
-      ? _jsDow === currentEmp.customSchedule.offDay
-      : false;
-    // أيام الانصراف المبكر المسموح (شيفت End ≠ 00:00)
-    const _isEarlyShift = _sched.shiftEnd !== '00:00';
-    if(!_isOffDay && !_isEarlyShift){
-      // تحقق من الوقت الحالي مقارنة بنهاية الدوام
-      const _nowMins = toMins(time);
-      const _endMins = toMins(_sched.shiftEnd);
-      // نهاية الدوام 00:00 → لا نمنع الانصراف (منتصف الليل)
-      if(_sched.shiftEnd !== '00:00' && _nowMins < _endMins - 5){
-        showToast('⚠️ لا يمكن الانصراف قبل نهاية الدوام ('+_sched.shiftEnd+')','err');
-        showEmpAlert('⚠️ لا يمكن الانصراف قبل '+_sched.shiftEnd,'warn');
+    // منع الانصراف قبل وقت الانصراف المحسوب (shiftEnd من السجل)
+    const _effectiveEnd = rec.shiftEnd||'00:00';
+    if(_effectiveEnd!=='00:00'){
+      const _nowMins=toMins(time), _endMins=toMins(_effectiveEnd);
+      // حالة تعدّي منتصف الليل: إذا shiftEnd < shiftStart نضيف 24 ساعة
+      const _ciMins=toMins(rec.shiftStart||rec.checkIn||'00:00');
+      const _adjEnd=_endMins<=_ciMins?_endMins+24*60:_endMins;
+      const _adjNow=_nowMins<_ciMins?_nowMins+24*60:_nowMins;
+      if(_adjNow < _adjEnd - 5){
+        showToast('⚠️ لا يمكن الانصراف قبل نهاية الدوام ('+_effectiveEnd+')','err');
+        showEmpAlert('⚠️ لا يمكن الانصراف قبل '+_effectiveEnd,'warn');
         resetAutoBack(); return;
       }
     }
@@ -1305,7 +1310,7 @@ function doAction(type){
     recs[idx].earlyOut=earlyOut;
     if(earlyOut){
       showToast('⚠️ تم التسجيل — انصراف مبكر','err');
-      showEmpAlert(`⚠️ انصرفت قبل نهاية الدوام! (${currentEmp.shiftEnd})`,'warn');
+      showEmpAlert(`⚠️ انصرفت قبل نهاية الدوام! (${_effectiveEnd})`,'warn');
     } else {
       showToast('🚪 تم تسجيل انصرافك');
     }
@@ -1475,8 +1480,11 @@ function renderTodayStats(){
   let rows='<table><thead><tr><th>اليوم</th><th>الموظف</th><th>الحضور</th><th>الانصراف</th><th>الاستراحة</th><th>خروج مؤقت</th><th>التعويض</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody>';
   emps.forEach(emp=>{
     const rec=todayRecs.find(r=>r.empId===emp.id);
-    const sEnd=emp.shiftEnd==='00:00'?'منتصف الليل':emp.shiftEnd;
-    const shift=`${emp.shiftStart}–${sEnd}`;
+    // عرض الشيفت من السجل إذا موجود (لأن الدوام يحسب من وقت الحضور)
+    const _recEnd = rec&&rec.shiftEnd?rec.shiftEnd:(emp.shiftEnd||'21:00');
+    const _recStart = rec&&rec.shiftStart?rec.shiftStart:(emp.shiftStart||'09:00');
+    const sEnd=_recEnd==='00:00'?'منتصف الليل':_recEnd;
+    const shift=rec?`${_recStart}–${sEnd}`:'دوام 12 ساعة';
     if(!rec){
       rows+=`<tr><td>${esc(emp.name)}</td><td><span class="shift-tag">${esc(shift)}</span></td>
         <td>—</td><td>—</td><td>—</td><td>—</td><td>—</td>
@@ -1994,40 +2002,25 @@ function isWeekend(dateStr){
   const day=d.getDay(); return day===0||day===6;
 }
 function getEmpSchedule(emp,dateStr){
-  const nm=(emp.name||'').trim();
-  const wknd=isWeekend(dateStr||todayStr());
-  const _dow = dateStr ? new Date(dateStr+'T12:00:00').getDay() : new Date().getDay();
-  const cfg = emp.customSchedule||{};
-
-  // دالة مساعدة: جلب القيمة من customSchedule أو القيمة الافتراضية
-  function cfgTmpOut(isWknd){ return isWknd?(cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30):(cfg.tmpOutWk!==undefined?cfg.tmpOutWk:40); }
-  function cfgBrk(isWknd,isSpecial){
-    if(isSpecial) return cfg.brkSpecial!==undefined?cfg.brkSpecial:0;
-    return isWknd?(cfg.brkWknd!==undefined?cfg.brkWknd:120):(cfg.brkWk!==undefined?cfg.brkWk:0);
+  // كل الموظفين: دوام 12 ساعة من وقت الحضور + ساعتين بريك
+  // نحاول نجيب وقت الانصراف من سجل اليوم إذا موجود
+  const todayRec = getRecs().find(r=>r.empId===emp.id&&r.date===(dateStr||todayStr()));
+  if(todayRec&&todayRec.checkIn&&todayRec.shiftEnd){
+    return{
+      shiftStart:todayRec.shiftStart||todayRec.checkIn,
+      shiftEnd:todayRec.shiftEnd,
+      breakMins:120,
+      tmpOutMins:30,
+      hasBreak:true
+    };
   }
-
-  if(nm.includes('محمد')){
-    if(_dow===6) return{shiftStart:'12:00',shiftEnd:'00:00',breakMins:cfg.brkWknd!==undefined?cfg.brkWknd:120,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:true};  // السبت
-    if(_dow===0) return{shiftStart:'14:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:false}; // الأحد
-    if(_dow===5) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:0,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:30,hasBreak:false};     // الجمعة
-    return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:cfg.brkWk!==undefined?cfg.brkWk:120,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:30,hasBreak:(cfg.brkWk!==undefined?cfg.brkWk:120)>0}; // اثنين→خميس
-  }
-  if(nm.includes('أحمد')||nm.includes('احمد')){
-    if(_dow===0) return{shiftStart:'09:30',shiftEnd:'15:00',breakMins:0,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:false}; // الأحد
-    if(_dow===6) return{shiftStart:'09:30',shiftEnd:'00:00',breakMins:cfg.brkWknd!==undefined?cfg.brkWknd:120,tmpOutMins:cfg.tmpOutWknd!==undefined?cfg.tmpOutWknd:30,hasBreak:true};  // السبت
-    if(_dow===5) return{shiftStart:'14:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:40,hasBreak:false};     // الجمعة
-    return{shiftStart:'16:00',shiftEnd:'00:00',breakMins:0,tmpOutMins:cfg.tmpOutWk!==undefined?cfg.tmpOutWk:40,hasBreak:false};                  // اثنين→خميس
-  }
-  // موظفون آخرون — يعتمد على customSchedule أو الإعدادات العامة
-  const isSpecialDay = (_dow===5||_dow===0);
-  const brkMins = isSpecialDay?cfgBrk(false,true):(wknd?cfgBrk(true,false):cfgBrk(false,false));
+  // قبل تسجيل الحضور: قيم افتراضية عامة
   return{
     shiftStart:emp.shiftStart||'09:00',
-    shiftEnd:emp.shiftEnd||'17:00',
-    breakMins:brkMins,
-    tmpOutMins:wknd?cfgTmpOut(true):cfgTmpOut(false),
-    hasBreak:brkMins>0,
-    offDay:cfg.offDay
+    shiftEnd:emp.shiftEnd||'21:00',
+    breakMins:120,
+    tmpOutMins:30,
+    hasBreak:true
   };
 }
 function updateKioskLateStatus(){
@@ -2824,29 +2817,12 @@ const BASE_SALARY = 1000; // الراتب الأساسي بالدرهم
 
 // حساب ساعات الدوام المتوقعة في الشهر لموظف معين
 function calcExpectedMonthlyHours(emp, monthStr) {
+  // كل الموظفين: 12 ساعة عمل فعلي (بعد طرح ساعتين بريك) × أيام الشهر
   const year = parseInt(monthStr.split('-')[0]);
   const month = parseInt(monthStr.split('-')[1]);
   const daysInMonth = new Date(year, month, 0).getDate();
-  let totalMins = 0;
-
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dateStr = `${monthStr}-${String(day).padStart(2,'0')}`;
-    const sched = getEmpSchedule(emp, dateStr);
-    // تخطي يوم الإجازة المخصص
-    if (sched.offDay !== undefined) {
-      const dow = new Date(dateStr+'T12:00:00').getDay();
-      if (dow === sched.offDay) continue;
-    }
-    let mins;
-    if (sched.shiftEnd === '00:00') {
-      mins = (24*60) - toMins(sched.shiftStart);
-    } else {
-      mins = toMins(sched.shiftEnd) - toMins(sched.shiftStart);
-    }
-    mins -= sched.breakMins || 0;
-    totalMins += mins;
-  }
-  return totalMins / 60; // بالساعات
+  // 12 ساعة صافية × كل أيام الشهر (بدون يوم إجازة ثابت)
+  return 10 * daysInMonth; // 12 - 2 بريك = 10 ساعات صافية
 }
 
 // حساب الراتب النهائي بعد الخصم/المكافأة
